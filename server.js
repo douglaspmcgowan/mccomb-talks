@@ -737,7 +737,7 @@ return pageWrapper({ title: 'Psych_Battery: Systems Map & Prototyping', icon: '\
 <div class="hero" style="background:linear-gradient(135deg,#1a1a1a 0%,#2d1f0e 50%,#1a0a00 100%)">
   <h1>Psych_Battery</h1>
   <p class="subtitle">A physical desk object that tracks digital engagement and promotes analog recovery &mdash; systems map, display mechanisms, and prototyping plans</p>
-  <div class="meta"><span>AI Expedition 3</span><span>Stanford ME 292C</span><span>2025</span></div>
+  <div class="meta"><span>AI Expedition 3</span><span>UC Berkeley</span><span>2025</span></div>
 </div>
 <nav class="nav"><div class="nav-inner">
   <button class="nav-tab active" onclick="showSection('scontext',this)">Context</button>
@@ -755,7 +755,7 @@ return pageWrapper({ title: 'Psych_Battery: Systems Map & Prototyping', icon: '\
 <!-- ===== CONTEXT ===== -->
 <div class="section active" id="sec-scontext">
 <h2>The PATHOS-BATTERY Concept</h2>
-<p>This project emerges from a Stanford design course exploring <strong>burnout and anxiety in AI-centered hybrid workplaces</strong>. Qualitative research &mdash; five semi-structured interviews and two observational studies &mdash; produced three core insights:</p>
+<p>This project emerges from a UC Berkeley design course exploring <strong>burnout and anxiety in AI-centered hybrid workplaces</strong>. Qualitative research &mdash; five semi-structured interviews and two observational studies &mdash; produced three core insights:</p>
 <ul class="findings">
   <li><strong>More is Just More.</strong> Users have already iterated on their workflows multiple times. Adding tools or tasks isn't inherently helpful. Design must integrate without adding friction.</li>
   <li><strong>Workarounds are Still Common.</strong> Even highly technical users revert to low-tech, custom-made workarounds for focus and environment optimization.</li>
