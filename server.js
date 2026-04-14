@@ -845,7 +845,7 @@ return pageWrapper({ title: 'Psych_Battery: Systems Map & Prototyping', icon: '\
 <h3 id="s4-elements">Step 4: Elements & Interconnections</h3>
 <p>The key elements of the system and how they connect:</p>
 
-<div class="slide-fig"><img src="/figures/battery/system_diagram.png" alt="System diagram" onclick="openLightbox(this)"><div class="caption">System diagram showing the three stocks (Battery Charge Level, Interruption Intensity, Recharge Resistance), their inflows/outflows, and the balancing (B1) and reinforcing (R1) feedback loops.</div></div>
+<div class="slide-fig"><img src="/figures/battery/system_diagram_user.svg" alt="System diagram" onclick="openLightbox(this)" style="background:#fff;padding:1rem;"><div class="caption">System diagram showing the three stocks (Battery Charge Level, Interruption Intensity, Recharge Resistance), their inflows/outflows, and the balancing (B1) and reinforcing (R1) feedback loops.</div></div>
 
 <table class="result-table">
 <tr><th>Element</th><th>Role</th><th>Connections</th></tr>
