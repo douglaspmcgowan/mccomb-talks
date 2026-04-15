@@ -1375,10 +1375,36 @@ return pageWrapper({ title: 'Psych_Battery: Systems Map & Prototyping', icon: '\
 <h3>Architecture</h3>
 <p><code>Python Backend &rarr; (HTTP POST or Serial) &rarr; ESP32 &rarr; (Data Pin) &rarr; WS2812B LEDs &rarr; behind frosted acrylic diffuser &rarr; inside battery enclosure</code></p>
 
-<h3>Wiring Diagram</h3>
-<div class="slide-fig"><img src="/figures/battery/led_wiring.png" alt="LED wiring diagram" onclick="openLightbox(this)"><div class="caption">Complete wiring: ESP32 GPIO16 &rarr; 330&ohm; resistor &rarr; 74AHCT125 level shifter &rarr; WS2812B data input. 1000uF capacitor across power rails. 5V external power supply feeds both LEDs and level shifter VCC.</div></div>
+<h3>Full Circuit Blueprints</h3>
+<div class="slide-fig"><img src="/figures/battery/led_blueprint_full.png" alt="Full 4-row LED blueprint" onclick="openLightbox(this)"><div class="caption">Complete blueprint: ESP32 &rarr; 74AHCT125 level shifter &rarr; 330&ohm; resistor &rarr; 4 rows of WS2812B LEDs in serpentine layout. 1000uF capacitor on power rails. 5V 4A power supply. Title block: "PSYCH_BATTERY LED CIRCUIT - 4 ROW SERPENTINE LAYOUT".</div></div>
 
-<div class="slide-fig"><img src="/figures/battery/led_assembly.png" alt="LED assembly" onclick="openLightbox(this)"><div class="caption">Assembly view: LED strip cut into serpentine segments inside 3D-printed battery enclosure, with frosted acrylic diffuser panel ready to mount. ESP32 on breadboard at the base.</div></div>
+<div class="slide-fig"><img src="/figures/battery/led_matrix_blueprint.png" alt="8x8 matrix blueprint" onclick="openLightbox(this)"><div class="caption">Alternative: 8x8 NeoPixel matrix version. Same ESP32 + level shifter circuit, but the matrix is a single rigid PCB with 64 LEDs. Frosted acrylic panel shown at 50mm distance for diffusion.</div></div>
+
+<div class="slide-fig"><img src="/figures/battery/led_wiring.png" alt="LED wiring closeup" onclick="openLightbox(this)"><div class="caption">Simplified wiring closeup: ESP32 GPIO16 &rarr; resistor &rarr; level shifter &rarr; WS2812B data input. Capacitor across power rails.</div></div>
+
+<div class="slide-fig"><img src="/figures/battery/led_assembly.png" alt="LED assembly" onclick="openLightbox(this)"><div class="caption">Assembly view: LED strip cut into serpentine segments inside 3D-printed battery enclosure, with frosted acrylic diffuser panel ready to mount.</div></div>
+
+<h3>LED Matrix Options (Instead of Strip)</h3>
+<p>Instead of cutting LED strip into rows, you can use a pre-made matrix panel. Here are the best options for the ~60-70mm battery enclosure:</p>
+
+<table class="result-table">
+<tr><th>Option</th><th>LEDs</th><th>Size</th><th>Price</th><th>Fit</th><th>Notes</th></tr>
+<tr><td><strong>24-LED NeoPixel Ring + 7-LED Jewel</strong></td><td>31</td><td>65.5mm &oslash;</td><td>~$23</td><td>Perfect</td><td>Best for cylindrical battery. Smoothest diffusion. <a href="https://www.adafruit.com/product/1586" target="_blank">Ring</a> + <a href="https://www.adafruit.com/product/2226" target="_blank">Jewel</a></td></tr>
+<tr><td><strong>BTF-LIGHTING 8x8 Flexible Panel</strong></td><td>64</td><td>80x80mm</td><td>~$10</td><td>Curve to fit</td><td>Flexible FPCB, can be bent into an arc. Most LEDs for the price. <a href="https://www.amazon.com/BTF-LIGHTING-0-24ft0-24ft-Programmed-Individually-Addressable/dp/B01DC0IMRW" target="_blank">Amazon</a></td></tr>
+<tr><td><strong>Adafruit NeoPixel 8x8 Rigid</strong></td><td>64</td><td>71x71mm</td><td>~$35</td><td>Tight (71mm)</td><td>Rigid PCB, proven in Ripple Effect project. <a href="https://www.adafruit.com/product/1487" target="_blank">Adafruit #1487</a></td></tr>
+<tr><td><strong>144 LED/m Strip (4 rows)</strong></td><td>32</td><td>56x48mm custom</td><td>~$3</td><td>Custom</td><td>Cheapest. Densest pitch (6.9mm). Requires soldering 6 bridges. <a href="https://www.amazon.com/BTF-LIGHTING-WS2812B1M144LB30/dp/B01CDTEJR0" target="_blank">Amazon</a></td></tr>
+<tr><td><strong>16-LED NeoPixel Ring</strong></td><td>16</td><td>44.5mm &oslash;</td><td>~$10</td><td>Small</td><td>For a smaller battery. Less coverage. <a href="https://www.adafruit.com/product/1463" target="_blank">Adafruit #1463</a></td></tr>
+</table>
+
+<div class="callout"><div class="label">Recommended</div><p>For a first prototype, the <strong>24-LED NeoPixel Ring + 7-LED Jewel combo ($23)</strong> is the best choice. The ring's 65.5mm diameter fits the battery perfectly, the circular shape matches the cylindrical form, and it produces the smoothest diffused glow. Just daisy-chain the Jewel's data-out to the Ring's data-in &mdash; no custom wiring needed.</p></div>
+
+<h4>Matrix Wiring (Same Circuit, Different LED Module)</h4>
+<p>The wiring is identical regardless of which LED option you choose &mdash; they all use the same 3-wire interface (VCC, GND, DIN). The only differences:</p>
+<ul class="findings">
+  <li><strong>Ring + Jewel:</strong> Connect Jewel DIN to the level shifter output. Connect Jewel DOUT to Ring DIN. Ring DOUT left unconnected. Both share VCC and GND from the power supply. In code, set <code>NUM_LEDS = 31</code>.</li>
+  <li><strong>8x8 Matrix (rigid or flexible):</strong> Single DIN connection to level shifter output. Set <code>NUM_LEDS = 64</code>. The matrix internally chains all 64 LEDs in a serpentine pattern &mdash; no soldering between rows needed.</li>
+  <li><strong>4-Row Strip:</strong> Requires cutting the strip and soldering 3 wires (VCC, GND, Data) between each row. First row's DIN connects to level shifter. Last row's DOUT left unconnected. Set <code>NUM_LEDS = total LEDs across all rows</code>.</li>
+</ul>
 
 <h3>Bill of Materials (~$80-130)</h3>
 <table class="result-table">
