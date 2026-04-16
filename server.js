@@ -111,6 +111,18 @@ details.proto-plan .plan-body li { margin:0.3rem 0; }
 details.proto-plan .plan-body a { color:var(--accent); }
 .cost-tag { display:inline-block; font-size:0.75rem; font-weight:600; padding:0.15rem 0.5rem; border-radius:999px; background:#dcfce7; color:#166534; margin-left:0.5rem; }
 [data-theme="dark"] .cost-tag { background:#14532d; color:#86efac; }
+pre.code-block { background:#1e1e1e; color:#d4d4d4; padding:1rem 1.25rem; border-radius:var(--radius); overflow-x:auto; font-family:'SF Mono','Monaco','Consolas','Courier New',monospace; font-size:0.8rem; line-height:1.5; margin:1rem 0; border:1px solid var(--border); }
+pre.code-block .kw { color:#569cd6; }
+pre.code-block .str { color:#ce9178; }
+pre.code-block .cmt { color:#6a9955; font-style:italic; }
+pre.code-block .num { color:#b5cea8; }
+pre.code-block .fn { color:#dcdcaa; }
+pre.code-block .ty { color:#4ec9b0; }
+.code-label { display:inline-block; font-size:0.7rem; font-weight:600; padding:0.2rem 0.6rem; border-radius:4px 4px 0 0; background:#2d2d2d; color:#d4d4d4; margin-bottom:-1px; border:1px solid var(--border); border-bottom:none; font-family:'SF Mono','Monaco','Consolas',monospace; }
+.phase-header { display:flex; align-items:center; gap:0.75rem; margin:2.5rem 0 1rem; padding:0.75rem 1rem; background:linear-gradient(90deg,var(--accent-light),transparent); border-left:4px solid var(--accent); border-radius:0 var(--radius) var(--radius) 0; }
+.phase-header .phase-num { font-family:'Playfair Display',serif; font-size:1.75rem; font-weight:700; color:var(--accent); line-height:1; }
+.phase-header .phase-title { font-family:'Playfair Display',serif; font-size:1.35rem; font-weight:600; color:var(--text); }
+.phase-header .phase-time { margin-left:auto; font-size:0.8rem; color:var(--text-muted); font-weight:500; }
 @media(max-width:600px) { .slide-pair{grid-template-columns:1fr} .hero{padding:3rem 1rem 2rem} .container{padding:1.5rem 1rem 3rem} h2{font-size:1.3rem} .flow-diagram{flex-direction:column} .flow-arrow{transform:rotate(90deg)} }
 `;
 }
@@ -742,11 +754,6 @@ return pageWrapper({ title: 'Psych_Battery: Systems Map & Prototyping', icon: '\
 <nav class="nav"><div class="nav-inner">
   <button class="nav-tab active" onclick="showSection('scontext',this)">Context</button>
   <button class="nav-tab" onclick="showSection('ssystems',this)">Systems Map</button>
-  <button class="nav-tab" onclick="showSection('sled',this)">LED Diffusion</button>
-  <button class="nav-tab" onclick="showSection('sferro',this)">Ferrofluid</button>
-  <button class="nav-tab" onclick="showSection('selwire',this)">EL Wire</button>
-  <button class="nav-tab" onclick="showSection('selectro',this)">Electrochromic</button>
-  <button class="nav-tab" onclick="showSection('sthermo',this)">Thermochromic</button>
   <button class="nav-tab" onclick="showSection('stech',this)">Tech Stack</button>
   <button class="nav-tab" onclick="showSection('sledguide',this)">LED Build</button>
   <button class="nav-tab" onclick="showSection('seinkguide',this)">E-Ink Build</button>
@@ -778,8 +785,8 @@ return pageWrapper({ title: 'Psych_Battery: Systems Map & Prototyping', icon: '\
 </div>
 <p>The display is analog or mechanical; all digital logic stays in the backend. Single-dimension data mapping (charge level) is the sweet spot &mdash; more axes reintroduce the cognitive load the device is meant to reduce.</p>
 
-<h3>Five Candidate Mechanisms</h3>
-<p>Each mechanism below represents a non-screen display technology with two specific implementation options. They are ordered from most practical to most experimental.</p>
+<h3>Display Mechanisms Evaluated</h3>
+<p>During the concept exploration phase, five non-screen display technologies were evaluated as the chart below shows. Full write-ups with materials, implementation options, and prototyping plans for all five are archived in <code>psych_battery_concept_mechanisms_archived_html.html</code> and <code>pathos_battery_display_mechanisms.md</code> in the research folder. After evaluation, the project narrowed to two directions detailed in the <strong>LED Build</strong> and <strong>E-Ink Build</strong> tabs.</p>
 
 <div class="flow-diagram">
   <div class="flow-node"><strong>LED Diffusion</strong><br><em>Light + color</em></div>
@@ -928,252 +935,6 @@ return pageWrapper({ title: 'Psych_Battery: Systems Map & Prototyping', icon: '\
 </ul>
 </div>
 
-<!-- ===== LED DIFFUSION ===== -->
-<div class="section" id="sec-sled">
-<h2>1. LED Diffusion Through Frosted Glass</h2>
-<p>RGB LEDs mounted behind or inside a translucent enclosure (frosted glass, sandblasted acrylic, or cast resin). The frosted surface scatters point-source light across the entire surface, producing a <strong>soft, even glow with no visible light source</strong>. Brightness and color are controlled via PWM on a microcontroller. Requires minimal power and no moving parts.</p>
-
-<div class="slide-fig">
-  <img src="/figures/battery/led_diffusion.png" alt="LED Diffusion concept" onclick="openLightbox(this)" onerror="this.parentElement.innerHTML='<div style=\\'width:100%;height:300px;background:linear-gradient(135deg,#0a3d0a,#3d3d0a,#3d0a0a);display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,0.5);font-size:0.9rem;\\'>Image generating &mdash; check back soon</div>'">
-  <div class="caption">Concept visualization: frosted glass desk object with ambient LED glow mapping charge level to color.</div>
-</div>
-
-<h3>Option A: Color Gradient Mapping</h3>
-<p>A single RGB LED cluster inside a frosted glass or cast resin enclosure. Charge level maps to a <strong>continuous color gradient</strong> &mdash; deep green at full, amber at mid-range, red at depleted. The user reads the state peripherally like glancing at a candle. At critical depletion, the color pulses slowly using PWM cycling. The object's entire surface is the display &mdash; no indicators, icons, or segmentation.</p>
-<div class="tags"><span class="tag">RGB LED strip</span><span class="tag">ESP32 / Arduino Nano</span><span class="tag">Frosted glass</span><span class="tag">Silicone casting resin</span></div>
-
-<h3>Option B: Monochrome Intensity with Breathing Pulse</h3>
-<p>A warm white or amber LED inside a diffusion enclosure. <strong>No color change &mdash; only brightness varies.</strong> Full charge = bright, steady glow. Mid-range = dimmer. Depleted = very dim with a slow "breathing" pulse (gradual brighten-and-fade cycle). Critical depletion = faster, more insistent pulse. This strips the display to the absolute minimum: one light, getting quieter. The breathing rhythm is inherently biological, reinforcing the energy metaphor.</p>
-<div class="tags"><span class="tag">Warm white LED</span><span class="tag">PWM driver</span><span class="tag">Frosted enclosure</span></div>
-
-<div class="callout"><div class="label">Reference</div><p>Ambient Orb (frosted glass sphere, single data dimension mapped to color). MacBook sleep indicator breathing light (discontinued).</p></div>
-
-<details class="proto-plan"><summary>Prototyping Plan: LED Diffusion <span class="cost-tag">~$55</span></summary><div class="plan-body">
-<h4>Materials & Costs</h4>
-<ul>
-  <li>ESP32 dev board &mdash; <a href="https://www.amazon.com/dp/B08D5ZD528" target="_blank">Amazon ~$8</a></li>
-  <li>WS2812B RGB LED strip (1m) &mdash; <a href="https://www.amazon.com/dp/B01CDTED80" target="_blank">Amazon ~$10</a></li>
-  <li>Frosted acrylic sheet (1/8" thick) &mdash; <a href="https://www.amazon.com/dp/B08G8D8YRC" target="_blank">Amazon ~$12</a> (or laser-cut scrap from Jacobs Hall)</li>
-  <li>USB-C cable + breadboard + jumper wires &mdash; ~$10</li>
-  <li>Hot glue, diffusion paper, sandpaper &mdash; ~$5</li>
-  <li>Optional: silicone casting resin for enclosure &mdash; <a href="https://www.amazon.com/dp/B07ZHGCXRY" target="_blank">Amazon ~$20</a></li>
-</ul>
-<h4>Equipment (UC Berkeley)</h4>
-<ul>
-  <li><strong>Jacobs Hall:</strong> Laser cutter (cut acrylic enclosure), 3D printer (base/housing)</li>
-  <li><strong>CITRIS Invention Lab:</strong> Soldering station, electronics bench</li>
-  <li><strong>Supernode (Cory Hall):</strong> Soldering irons, 3D printers (free, 24/7)</li>
-</ul>
-<h4>Build Steps (1-2 weeks)</h4>
-<ul>
-  <li><strong>Day 1-2:</strong> Design enclosure in Fusion 360 or similar. Rounded rectangular box with frosted acrylic panels. Cut on Jacobs laser cutter or 3D print at Supernode.</li>
-  <li><strong>Day 3:</strong> Wire ESP32 to LED strip. Program basic color gradient (green &rarr; amber &rarr; red) and breathing pulse at low charge. Test with USB power.</li>
-  <li><strong>Day 4-5:</strong> Assemble enclosure. Mount LEDs inside, attach frosted panels. Route USB cable out the back. Add diffusion paper if needed for even glow.</li>
-  <li><strong>Day 6-7:</strong> Write serial/WiFi protocol for the backend to send charge level to ESP32. Test full loop: backend sends value &rarr; ESP32 updates color.</li>
-</ul>
-<h4>Difficulty: Low</h4>
-<p>This is the most forgiving prototype. LEDs are cheap, well-documented, and fail gracefully. Good first build to validate the form factor before committing to more exotic mechanisms.</p>
-</div></details>
-</div>
-
-<!-- ===== FERROFLUID ===== -->
-<div class="section" id="sec-sferro">
-<h2>2. Ferrofluid Display</h2>
-<p>Ferrofluid is a colloidal suspension of magnetic nanoparticles in oil. It physically reshapes in response to magnetic fields &mdash; <strong>spiking, pooling, climbing, splitting</strong>. Behavior is controlled precisely with electromagnets driven by a microcontroller. The fluid is jet black, glossy, and moves with a viscous, organic quality. Must be permanently sealed in glass to prevent staining and degradation.</p>
-
-<div class="slide-fig">
-  <img src="/figures/battery/ferrofluid.png" alt="Ferrofluid concept" onclick="openLightbox(this)" onerror="this.parentElement.innerHTML='<div style=\\'width:100%;height:300px;background:linear-gradient(135deg,#0a0a0a,#1a1a2e,#0a0a0a);display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,0.5);font-size:0.9rem;\\'>Image generating &mdash; check back soon</div>'">
-  <div class="caption">Concept visualization: ferrofluid desk sculpture with magnetic spike field responding to charge level.</div>
-</div>
-
-<h3>Option A: Spike Field as Stress Indicator</h3>
-<p>A shallow glass dish with an electromagnet underneath. At full charge, the fluid sits <strong>calm and flat &mdash; a smooth black mirror</strong>. As the battery drains, the electromagnet gradually strengthens, and the fluid forms increasingly tall, numerous spikes. The more depleted you are, the more agitated the surface looks. This <strong>inverts the typical "full = more" metaphor</strong>: calm = healthy, agitated = depleted, mapping directly onto the stress/burnout framing.</p>
-<div class="tags"><span class="tag">Ferrofluid (oil-based)</span><span class="tag">Sealed glass dish</span><span class="tag">Neodymium electromagnets</span><span class="tag">Current driver circuit</span></div>
-
-<h3>Option B: Blob Migration Between Two Chambers</h3>
-<p>Two transparent chambers connected by a narrow channel, with electromagnets behind each. At full charge, all ferrofluid is held in the "charged" chamber. As charge depletes, the fluid slowly migrates to the opposite side &mdash; <strong>an hourglass effect</strong>. The migration is slow enough that you'd only notice it changing between periodic glances &mdash; true peripheral awareness. Recharging triggers the electromagnets to pull the fluid back.</p>
-<div class="tags"><span class="tag">Two-chamber glass vessel</span><span class="tag">Electromagnets (x2)</span><span class="tag">H-bridge motor driver</span></div>
-
-<div class="callout"><div class="label">Reference</div><p>Ferrolic clock by Zelf Koelman (ferrofluid forming shapes in sealed glass). MTR Designs desk sculptures (ferrofluid in anodized aluminum and glass).</p></div>
-
-<details class="proto-plan"><summary>Prototyping Plan: Ferrofluid <span class="cost-tag">~$105</span></summary><div class="plan-body">
-<h4>Materials & Costs</h4>
-<ul>
-  <li>Ferrofluid (50ml, oil-based) &mdash; <a href="https://www.amazon.com/dp/B09PV4HLHM" target="_blank">Amazon ~$30</a></li>
-  <li>Shallow glass petri dish (100mm) &mdash; <a href="https://www.amazon.com/dp/B07DPMD34T" target="_blank">Amazon ~$8</a></li>
-  <li>Electromagnets (12V, 20mm) x2 &mdash; <a href="https://www.amazon.com/dp/B07PJ5XG1N" target="_blank">Amazon ~$15</a></li>
-  <li>Arduino Nano &mdash; <a href="https://www.amazon.com/dp/B0097AU5OU" target="_blank">Amazon ~$8</a></li>
-  <li>L298N H-bridge motor driver &mdash; <a href="https://www.amazon.com/dp/B07BK1QL5T" target="_blank">Amazon ~$7</a></li>
-  <li>12V power supply &mdash; ~$10</li>
-  <li>Acrylic/aluminum for base &mdash; ~$15 (laser cut at Jacobs)</li>
-  <li>Silicone sealant, wires, breadboard &mdash; ~$12</li>
-</ul>
-<h4>Equipment (UC Berkeley)</h4>
-<ul>
-  <li><strong>Jacobs Hall:</strong> Laser cutter (base plate), 3D printer (housing)</li>
-  <li><strong>CITRIS Invention Lab:</strong> Soldering, electronics bench, vacuum chamber (for degassing sealant)</li>
-</ul>
-<h4>Build Steps (2-3 weeks)</h4>
-<ul>
-  <li><strong>Day 1-3:</strong> Design and fabricate base housing. Needs cavity for electromagnet(s) below the glass dish. Laser cut acrylic or 3D print.</li>
-  <li><strong>Day 4-5:</strong> Wire electromagnets to H-bridge driver + Arduino. Program PWM control: zero current at full charge (calm fluid), increasing current as charge drops (more spikes).</li>
-  <li><strong>Day 6-7:</strong> Carefully pour ferrofluid into glass dish. Seal with silicone (ferrofluid stains everything it touches permanently). Let cure 24hrs.</li>
-  <li><strong>Day 8-10:</strong> Assemble: mount sealed dish on base, route wires. Test electromagnetic field strength vs. spike height. Calibrate PWM ranges.</li>
-  <li><strong>Day 11-14:</strong> Integrate with backend serial protocol. Test full loop.</li>
-</ul>
-<h4>Difficulty: Medium-High</h4>
-<p>Ferrofluid is messy and unforgiving &mdash; any leak permanently stains. The seal must be perfect. Electromagnetic calibration (field strength vs. spike behavior) takes experimentation. But the visual impact is unmatched.</p>
-</div></details>
-</div>
-
-<!-- ===== EL WIRE ===== -->
-<div class="section" id="sec-selwire">
-<h2>3. Electroluminescent (EL) Wire</h2>
-<p>EL wire glows when alternating current passes through it &mdash; a phosphor layer between two electrodes lights up along the entire length. It's thin, flexible, produces a <strong>soft even glow with no hot spots</strong>, runs on minimal power, and generates no heat. It dims gracefully with voltage reduction and flickers visibly at low drive frequencies.</p>
-
-<div class="slide-fig">
-  <img src="/figures/battery/el_wire.png" alt="EL Wire concept" onclick="openLightbox(this)" onerror="this.parentElement.innerHTML='<div style=\\'width:100%;height:300px;background:linear-gradient(135deg,#0a1a2e,#0e2e3e,#0a1a1a);display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,0.5);font-size:0.9rem;\\'>Image generating &mdash; check back soon</div>'">
-  <div class="caption">Concept visualization: translucent resin object with glowing EL wire veins like a vascular system.</div>
-</div>
-
-<h3>Option A: Embedded Veins in a Solid Object</h3>
-<p>EL wire cast inside translucent resin so the battery object appears to have <strong>glowing veins or capillaries</strong> running through it. At full charge, all veins are lit &mdash; the object looks alive. As the battery drains, veins go dark progressively from the extremities inward, like circulation withdrawing. Even when unlit, the dark veins remain visible as lines in the resin &mdash; the depleted state looks dormant rather than empty. The biological quality fits the human energy metaphor directly.</p>
-<div class="tags"><span class="tag">EL wire (multi-segment)</span><span class="tag">EL inverter</span><span class="tag">Clear casting resin</span><span class="tag">Relay/transistor array</span></div>
-
-<h3>Option B: Perimeter Ring with Heartbeat Flicker</h3>
-<p>EL wire or tape wrapped around the base as a status ring. At full charge, it glows bright and steady. As charge depletes, the wire is driven at progressively lower frequency, which makes EL wire <strong>visibly flicker</strong>. The flicker slows and becomes more irregular like a heartbeat slowing. This exploits a property most designers try to <em>avoid</em> (low-frequency flicker) and turns it into a feature.</p>
-<div class="tags"><span class="tag">EL tape</span><span class="tag">Variable-frequency inverter</span><span class="tag">Frequency control MCU</span></div>
-
-<div class="callout"><div class="label">Reference</div><p>SparkFun and Adafruit EL wire products. Biological vascular imagery for the "veins" concept.</p></div>
-
-<details class="proto-plan"><summary>Prototyping Plan: EL Wire <span class="cost-tag">~$90</span></summary><div class="plan-body">
-<h4>Materials & Costs</h4>
-<ul>
-  <li>EL wire (multiple colors, 3m total) &mdash; <a href="https://www.adafruit.com/product/402" target="_blank">Adafruit ~$18</a></li>
-  <li>EL wire inverter (battery-powered) &mdash; <a href="https://www.adafruit.com/product/448" target="_blank">Adafruit ~$3</a></li>
-  <li>Clear casting resin (32oz) &mdash; <a href="https://www.amazon.com/dp/B07ZHGCXRY" target="_blank">Amazon ~$25</a></li>
-  <li>Silicone mold kit &mdash; <a href="https://www.amazon.com/dp/B07V5FFPQZ" target="_blank">Amazon ~$18</a></li>
-  <li>Arduino Nano + relay module (4-channel) &mdash; <a href="https://www.amazon.com/dp/B0B18S99MZ" target="_blank">Amazon ~$14</a></li>
-  <li>Mold release spray, mixing cups, stir sticks &mdash; ~$12</li>
-</ul>
-<h4>Equipment (UC Berkeley)</h4>
-<ul>
-  <li><strong>CITRIS Invention Lab:</strong> Vacuum chamber (critical for degassing resin &mdash; bubbles ruin the cast), pressure pot if available</li>
-  <li><strong>Jacobs Hall:</strong> 3D printer for mold master (positive form), ventilated workspace for resin</li>
-</ul>
-<h4>Build Steps (2-3 weeks)</h4>
-<ul>
-  <li><strong>Day 1-2:</strong> Design organic form in CAD. 3D print positive master at Jacobs Hall. Make silicone mold from master (24hr cure).</li>
-  <li><strong>Day 3-4:</strong> Cut EL wire into branching segments. Plan routing pattern (trunk + branches). Solder connections to each segment for individual control via relay module.</li>
-  <li><strong>Day 5-6:</strong> First resin pour (50% fill). Let partially cure until tacky. Place EL wire segments into the tacky resin in the vein pattern. Second pour to cover. Vacuum degas in CITRIS chamber.</li>
-  <li><strong>Day 7-9:</strong> Full cure (48hrs minimum). Demold. Sand any rough edges.</li>
-  <li><strong>Day 10-12:</strong> Wire relay module to Arduino. Program segment control: all veins lit at full charge, progressive shutdown from extremities inward as charge drops.</li>
-  <li><strong>Day 13-14:</strong> Integrate with backend. Test.</li>
-</ul>
-<h4>Difficulty: Medium</h4>
-<p>Resin casting has a learning curve (bubbles, cure times, exothermic heat). The CITRIS vacuum chamber is key. Plan for at least one failed cast. The result is visually stunning and structurally robust.</p>
-</div></details>
-</div>
-
-<!-- ===== ELECTROCHROMIC ===== -->
-<div class="section" id="sec-selectro">
-<h2>4. Electrochromic Materials</h2>
-<p>Electrochromic glass or film changes opacity or color when a small voltage is applied. Used in auto-dimming rearview mirrors and Boeing 787 windows. The transition is <strong>slow (seconds to minutes), requires very little power</strong>, and holds its state with no continuous draw once changed. The shift is subtle and non-emissive &mdash; no light is produced, only surface properties change.</p>
-
-<div class="slide-fig">
-  <img src="/figures/battery/electrochromic.png" alt="Electrochromic concept" onclick="openLightbox(this)" onerror="this.parentElement.innerHTML='<div style=\\'width:100%;height:300px;background:linear-gradient(135deg,#1a1a2e,#2e2e3e,#1a1a1a);display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,0.5);font-size:0.9rem;\\'>Image generating &mdash; check back soon</div>'">
-  <div class="caption">Concept visualization: geometric desk object with electrochromic panel transitioning from clear to opaque.</div>
-</div>
-
-<h3>Option A: Window That Clouds Over</h3>
-<p>A small electrochromic panel on the face of the battery, with a colored surface or LED behind it. At full charge, the panel is clear &mdash; the user can see through to the light underneath. As charge depletes, the panel gradually becomes opaque, <strong>fogging over like breath on glass</strong>. Full depletion = completely opaque. The metaphor is <strong>cognitive fog</strong>: clarity is physically obscured.</p>
-<div class="tags"><span class="tag">Electrochromic film</span><span class="tag">Low-voltage DC driver</span><span class="tag">Illuminated backing surface</span></div>
-
-<h3>Option B: Color-Shifting Surface</h3>
-<p>Electrochromic film as the outer skin of the entire object, so it changes color as charge level changes. Some films shift between distinct colors (deep blue &harr; transparent, blue &harr; yellow). The transition happens over minutes &mdash; the user never sees it actively changing, just <strong>notices at some point that it's different</strong>. This is genuinely peripheral: no light emission, no animation, just a material property quietly shifting.</p>
-<div class="tags"><span class="tag">Electrochromic polymer film</span><span class="tag">Conformal application</span><span class="tag">Low-voltage driver</span></div>
-
-<div class="callout"><div class="label">Reference</div><p>Boeing 787 electrochromic windows. Auto-dimming rearview mirrors (Gentex). MIT Media Lab electrochromic fabric research.</p></div>
-
-<details class="proto-plan"><summary>Prototyping Plan: Electrochromic <span class="cost-tag">~$130</span></summary><div class="plan-body">
-<h4>Materials & Costs</h4>
-<ul>
-  <li>Electrochromic film sample (small piece, ~4"x4") &mdash; <a href="https://www.amazon.com/dp/B07K72GN2B" target="_blank">Amazon/AliExpress ~$50-70</a> (search "PDLC smart film sample")</li>
-  <li>PDLC film driver/controller &mdash; <a href="https://www.amazon.com/dp/B0D74V7ZRV" target="_blank">Amazon ~$15</a></li>
-  <li>ESP32 dev board &mdash; ~$8</li>
-  <li>MOSFET or relay for voltage switching &mdash; ~$5</li>
-  <li>3D print filament (PLA) for housing &mdash; ~$5 (Jacobs/Supernode)</li>
-  <li>Warm LED for backlight &mdash; ~$5</li>
-  <li>Wires, USB cable, breadboard &mdash; ~$10</li>
-</ul>
-<h4>Equipment (UC Berkeley)</h4>
-<ul>
-  <li><strong>Jacobs Hall / Supernode:</strong> 3D printer for housing (cube/cylinder form factor)</li>
-  <li><strong>CITRIS Invention Lab:</strong> Soldering, electronics bench for driver circuit</li>
-</ul>
-<h4>Build Steps (2-3 weeks)</h4>
-<ul>
-  <li><strong>Day 1-3:</strong> Source electrochromic/PDLC film (allow 5-7 days shipping from AliExpress for cheaper option). While waiting, design and 3D print housing with window cutout.</li>
-  <li><strong>Day 4-5:</strong> Mount PDLC film in housing window. Wire driver controller. Test: voltage ON = clear glass, voltage OFF = frosted/opaque.</li>
-  <li><strong>Day 6-7:</strong> Add warm LED backlight behind the film. When clear, the warm glow is visible (= charged). When opaque, it's hidden (= depleted).</li>
-  <li><strong>Day 8-10:</strong> Program ESP32 to control the driver via PWM for partial opacity states (not just on/off). Map charge level to opacity percentage.</li>
-  <li><strong>Day 11-14:</strong> Integrate with backend. Test full loop. Fine-tune the "cognitive fog" transition speed.</li>
-</ul>
-<h4>Difficulty: Medium</h4>
-<p>The main challenge is sourcing the electrochromic film &mdash; it's not a standard maker component. PDLC (Polymer Dispersed Liquid Crystal) film is the most accessible option. The housing and electronics are straightforward. Note: PDLC is technically not electrochromic (different mechanism) but produces the same clear-to-opaque visual effect.</p>
-</div></details>
-</div>
-
-<!-- ===== THERMOCHROMIC ===== -->
-<div class="section" id="sec-sthermo">
-<h2>5. Thermochromic Paint</h2>
-<p>Thermochromic pigments (leuco dyes) change color at specific temperature thresholds, typically between 25&ndash;45&deg;C. The transition is <strong>gradual, uneven, and tactile</strong> &mdash; the object's temperature is itself part of the information. This is the most <strong>multisensory</strong> option.</p>
-
-<div class="slide-fig">
-  <img src="/figures/battery/thermochromic.png" alt="Thermochromic concept" onclick="openLightbox(this)" onerror="this.parentElement.innerHTML='<div style=\\'width:100%;height:300px;background:linear-gradient(135deg,#2e0a0a,#2e1a0a,#0a1a2e);display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,0.5);font-size:0.9rem;\\'>Image generating &mdash; check back soon</div>'">
-  <div class="caption">Concept visualization: ceramic desk object with thermochromic surface showing heat-mapped color transition.</div>
-</div>
-
-<h3>Option A: Heat-Mapped Surface</h3>
-<p>The battery object coated in thermochromic paint, with a heating element inside. At full charge, the heater keeps the surface warm and the paint shows its "charged" color. As the battery depletes, heater output decreases, the surface cools, and the paint transitions. The transition is <strong>uneven &mdash; edges cool first, center last</strong> &mdash; creating an organic pattern like frost forming. The user can also <strong>touch the object and feel the temperature difference</strong>, adding a haptic dimension: warm = charged, cool = depleted.</p>
-<div class="tags"><span class="tag">Thermochromic leuco dye paint</span><span class="tag">Resistive heating wire / Peltier</span><span class="tag">Thermistor</span><span class="tag">Aluminum/ceramic enclosure</span></div>
-
-<h3>Option B: Touch-Reveal Interaction</h3>
-<p>The surface is kept just below the activation temperature. When the user touches it, their body heat (~37&deg;C) triggers a <strong>local color change under their fingertip</strong>, revealing a charge-state indicator printed on the substrate beneath. The reveal fades back within seconds after lifting the finger. Checking the battery becomes an <strong>intentional, physical act</strong> &mdash; the information is ephemeral and only available on demand, preventing constant monitoring.</p>
-<div class="tags"><span class="tag">Thermochromic paint (~33&deg;C activation)</span><span class="tag">Printed substrate layer</span><span class="tag">Passive or Peltier cooling</span></div>
-
-<div class="callout"><div class="label">Reference</div><p>Hypercolor mugs and shirts (same underlying chemistry). Mood rings. Thermochromic urinal indicators (temperature-reveal interaction).</p></div>
-
-<details class="proto-plan"><summary>Prototyping Plan: Thermochromic <span class="cost-tag">~$65</span></summary><div class="plan-body">
-<h4>Materials & Costs</h4>
-<ul>
-  <li>Thermochromic pigment powder (31&deg;C activation, color-changing) &mdash; <a href="https://www.amazon.com/dp/B07PXFKQS1" target="_blank">Amazon ~$12</a></li>
-  <li>Clear acrylic paint (mixing base) &mdash; ~$8</li>
-  <li>Peltier thermoelectric module (TEC1-12706) &mdash; <a href="https://www.amazon.com/dp/B07PYMK3GC" target="_blank">Amazon ~$8</a></li>
-  <li>Heatsink + small fan for Peltier cold side &mdash; ~$6</li>
-  <li>Arduino Nano &mdash; ~$8</li>
-  <li>NTC thermistor (temperature sensor) &mdash; ~$3</li>
-  <li>12V 3A power supply (Peltier draws significant current) &mdash; ~$10</li>
-  <li>Smooth ceramic or aluminum object (bowl, dome, or 3D-printed form) &mdash; ~$10</li>
-</ul>
-<h4>Equipment (UC Berkeley)</h4>
-<ul>
-  <li><strong>Jacobs Hall:</strong> 3D printer for form (if not using found object), spray booth for paint application</li>
-  <li><strong>CITRIS Invention Lab:</strong> Soldering, electronics bench</li>
-  <li><strong>Supernode:</strong> Quick iteration on Arduino code</li>
-</ul>
-<h4>Build Steps (1-2 weeks)</h4>
-<ul>
-  <li><strong>Day 1-2:</strong> Source or 3D print the base object (smooth dome or rounded form). Sand smooth &mdash; thermochromic paint shows surface imperfections.</li>
-  <li><strong>Day 3:</strong> Mix thermochromic pigment into clear acrylic paint (10-30% pigment by weight). Apply 2-3 thin coats to the object. Let dry between coats.</li>
-  <li><strong>Day 4-5:</strong> Mount Peltier module to the underside/interior of the object with thermal paste. Wire to Arduino with PWM control. Add thermistor for closed-loop temperature control.</li>
-  <li><strong>Day 6-7:</strong> Program temperature-to-charge mapping: full charge = Peltier heats surface above activation temp (warm color). Depleted = Peltier off, surface cools to ambient (cool color). PID control for smooth transitions.</li>
-  <li><strong>Day 8-10:</strong> Test touch-reveal: body heat (37&deg;C) should trigger local color change when touched. Tune activation temperature and Peltier setpoints. Integrate with backend.</li>
-</ul>
-<h4>Difficulty: Low-Medium</h4>
-<p>The cheapest and most tactile option. Thermochromic paint is forgiving (just repaint if the mix is wrong). The Peltier module is the main engineering challenge &mdash; it needs good thermal contact and a heatsink. But the result is uniquely multisensory: you can <em>see</em> and <em>feel</em> the charge state.</p>
-</div></details>
-</div>
 
 <!-- ===== TECH STACK ===== -->
 <div class="section" id="sec-stech">
@@ -1507,145 +1268,758 @@ uint32_t chargeToColor(int level, int brightness) {<br>
 
 <!-- ===== E-INK BUILD GUIDE ===== -->
 <div class="section" id="sec-seinkguide">
-<h2>E-Ink (5.79" 4-Color Bar): Full Build Guide</h2>
-<p>A complete guide for building a Psych_Battery prototype using a <strong>5.79-inch 4-color e-ink bar display</strong> (red/yellow/black/white) mounted on a battery-shaped enclosure. The display shows a charge bar that's readable in daylight, uses zero power between updates, and emits no blue light.</p>
+<h2>E-Ink (5.79" 4-Color Bar): Complete Build Guide</h2>
+<p>A complete, end-to-end guide for building a Psych_Battery prototype using the <strong>Good Display GDEY0579F52</strong> &mdash; a 5.79-inch 4-color e-ink bar display (red/yellow/black/white). This guide walks you through every step: buying parts, installing software, wiring the circuit, writing the code, and integrating with the Psych_Battery Python backend. Assumes no prior experience with ESP32 or e-ink displays.</p>
 
-<div class="slide-fig"><img src="/figures/battery/eink_prototype.png" alt="E-ink battery prototype" onclick="openLightbox(this)"><div class="caption">The finished prototype: a battery-shaped enclosure with a 5.79" 4-color e-ink bar display showing charge level. Yellow fill = healthy, red = danger. Readable in daylight with no backlight. USB-C for power and data.</div></div>
+<div class="slide-fig"><img src="/figures/battery/eink_prototype.png" alt="E-ink battery prototype" onclick="openLightbox(this)"><div class="caption">The finished prototype: a battery-shaped enclosure with the 5.79" 4-color e-ink bar display showing charge level. Yellow fill = healthy, red = danger. Readable in daylight with no backlight. USB-C for power and data.</div></div>
 
-<h3>Why E-Ink for Psych_Battery?</h3>
+<h3>Table of Contents</h3>
+<div class="toc"><ul>
+  <li><a href="#eink-why">Why E-Ink for Psych_Battery</a></li>
+  <li><a href="#eink-bom">Phase 0: Bill of Materials &amp; What to Order</a></li>
+  <li><a href="#eink-software">Phase 1: Software Setup (Arduino IDE + Libraries)</a></li>
+  <li><a href="#eink-wiring">Phase 2: Hardware Wiring (Step by Step)</a></li>
+  <li><a href="#eink-firsttest">Phase 3: First Upload &amp; Smoke Test</a></li>
+  <li><a href="#eink-chargecode">Phase 4: The Complete Charge Bar Firmware</a></li>
+  <li><a href="#eink-python">Phase 5: Python Backend Integration</a></li>
+  <li><a href="#eink-enclosure">Phase 6: Enclosure &amp; Mounting</a></li>
+  <li><a href="#eink-troubleshooting">Troubleshooting Guide</a></li>
+</ul></div>
+
+<h3 id="eink-why">Why E-Ink for Psych_Battery?</h3>
 <ul class="findings">
   <li><strong>Zero blue light.</strong> E-ink reflects ambient light like paper. No backlight, no screen glow. Matches the "no blue-light screens" design constraint perfectly.</li>
   <li><strong>Always-on with zero power.</strong> The charge bar stays visible even when the ESP32 is asleep or unplugged. The display retains its image indefinitely without drawing any current.</li>
   <li><strong>Daylight readable.</strong> Gets <em>more</em> visible in bright light (opposite of LEDs/LCDs). Perfect for a desk near a window.</li>
-  <li><strong>4 colors map to charge levels.</strong> Yellow = healthy/charged, Red = danger/depleted, Black = text and outlines, White = background. No color gradient needed &mdash; discrete zones.</li>
-  <li><strong>Slow refresh is fine.</strong> A charge bar that updates every few minutes is a perfect match for the 12-second refresh cycle.</li>
+  <li><strong>4 colors map cleanly to charge zones.</strong> Yellow = healthy/charged, Red = danger/depleted, Black = text and outlines, White = background. Discrete zones, no gradient needed.</li>
+  <li><strong>Slow refresh is acceptable.</strong> A charge bar that updates every few minutes is a perfect match for the 12-second refresh cycle.</li>
 </ul>
 
-<div class="callout"><div class="label">Limitation: No glow in the dark</div><p>E-ink displays are not visible in a dark room without ambient light. If your desk is in a dim room, consider adding a <strong>single RGB LED</strong> alongside the e-ink display for low-charge alerts (pulsing red when critically depleted). The e-ink handles the primary display; the LED handles dark-room visibility.</p></div>
+<div class="callout"><div class="label">Known Limitation: Dark Rooms</div><p>E-ink is not visible in a dark room without ambient light. If your desk is in a dim space, add a <strong>single RGB LED</strong> alongside the e-ink display for low-charge alerts (pulse red when critically depleted). The e-ink handles the primary display; the LED handles dark-room visibility.</p></div>
 
 <h3>Full Circuit Blueprint</h3>
 <div class="slide-fig"><img src="/figures/battery/eink_blueprint.png" alt="E-ink circuit blueprint" onclick="openLightbox(this)"><div class="caption">Complete circuit: ESP32 &rarr; SPI signals (MOSI, CLK, CS, DC, RST, BUSY) &rarr; DESPI-C579 driver board &rarr; FPC ribbon cable &rarr; 5.79" 4-color e-ink display showing battery charge bar.</div></div>
 
-<h3>Bill of Materials (~$50-65)</h3>
-<table class="result-table">
-<tr><th>Component</th><th>Product</th><th>Price</th><th>Source</th></tr>
-<tr><td>E-Ink Display</td><td>Good Display GDEY0579F52 (5.79", 792x272, 4-color RYBW)</td><td>~$15-25</td><td><a href="https://buy-lcd.com/products/gdey0579f52" target="_blank">buy-lcd.com</a> or <a href="https://www.good-display.com/product/767.html" target="_blank">Good Display</a></td></tr>
-<tr><td>Driver Board</td><td>DESPI-C579 adapter (24-pin FPC, handles dual IST7158 controllers)</td><td>~$7</td><td><a href="https://www.good-display.com/product/521.html" target="_blank">Good Display</a></td></tr>
-<tr><td>ESP32 Dev Board</td><td>ESP32-WROOM-32 DevKit V1 (CP2102 USB)</td><td>~$8</td><td>Amazon</td></tr>
-<tr><td>Breadboard + Wires</td><td>Half-size breadboard + jumper wires</td><td>~$12</td><td>Amazon</td></tr>
-<tr><td>Enclosure</td><td>3D-printed PLA battery shape with display window cutout</td><td>~$5</td><td>Jacobs Hall / Supernode</td></tr>
-<tr><td>USB-C Cable</td><td>Data-capable USB cable for ESP32</td><td>~$5</td><td>Any</td></tr>
-</table>
-<p><strong>Total: ~$50-65.</strong> No level shifter needed (ESP32 is 3.3V, display is 3.3V). No external power supply needed (display draws only ~12.5 mA during refresh). No capacitor needed. This is the simplest circuit of any prototype option.</p>
+<!-- ============ PHASE 0: BOM ============ -->
+<div class="phase-header"><span class="phase-num">0</span><span class="phase-title">Bill of Materials &amp; What to Order</span><span class="phase-time">30 min</span></div>
 
-<h3>How E-Ink SPI Works (Plain English)</h3>
-<p>E-ink displays use <strong>SPI</strong> (Serial Peripheral Interface) &mdash; a way for the ESP32 to send data to the display over wires. Think of it like a one-way conversation:</p>
+<h3 id="eink-bom">Exact Parts List</h3>
+<table class="result-table">
+<tr><th>Component</th><th>Exact Product</th><th>Price</th><th>Where to Buy</th></tr>
+<tr><td>E-Ink Display</td><td>Good Display GDEY0579F52 (5.79", 792&times;272, 4-color RYBW, 139&times;48mm active area)</td><td>~$18-25</td><td><a href="https://buy-lcd.com/products/gdey0579f52" target="_blank">buy-lcd.com</a></td></tr>
+<tr><td>Driver Adapter Board</td><td>DESPI-C579 (24-pin FPC adapter, handles dual IST7158 controllers)</td><td>~$7</td><td><a href="https://buy-lcd.com/products/despi-c579" target="_blank">buy-lcd.com</a></td></tr>
+<tr><td>ESP32 Dev Board</td><td>ESP32-WROOM-32 DevKit V1 (30-pin, CP2102 USB-to-serial)</td><td>~$8</td><td><a href="https://www.amazon.com/HiLetgo-ESP-WROOM-32-Development-Microcontroller-Integrated/dp/B08D5ZD528" target="_blank">HiLetgo 3-pack on Amazon</a></td></tr>
+<tr><td>Breadboard</td><td>Half-size (400-point) solderless breadboard</td><td>~$5</td><td>Amazon (any)</td></tr>
+<tr><td>Jumper Wires</td><td>Male-to-male + male-to-female dupont wires, 10cm</td><td>~$7</td><td>Amazon (any 100-pack)</td></tr>
+<tr><td>Micro-USB Cable</td><td>Data-capable (not charge-only) for ESP32 programming</td><td>~$5</td><td>Any</td></tr>
+<tr><td>Header Pins</td><td>1&times;8 male header pins (for soldering to DESPI-C579)</td><td>~$3</td><td>Amazon</td></tr>
+<tr><td>Enclosure</td><td>3D-printed PLA battery shape (print at Jacobs Hall or Supernode)</td><td>~$3 filament</td><td>UC Berkeley makerspace</td></tr>
+</table>
+
+<p><strong>Total: ~$55-63.</strong> No level shifter, no capacitor, no external power supply. This is the simplest prototype in the whole lineup.</p>
+
+<div class="callout"><div class="label">Ordering tip</div><p>Buy the display and DESPI-C579 <strong>together</strong> from buy-lcd.com in a single order &mdash; saves on international shipping (parts ship from China, 1-3 weeks). Order the ESP32 and breadboard from Amazon while you wait. The Good Display site is legitimate (it's the manufacturer's retail storefront), but first-time credit card charges sometimes get flagged by US banks &mdash; have your phone nearby to approve.</p></div>
+
+<h3>Required Tools</h3>
 <ul class="findings">
-  <li><strong>MOSI (Master Out, Slave In):</strong> The data wire. ESP32 sends pixel data and commands through this.</li>
-  <li><strong>CLK (Clock):</strong> A timing signal. Every pulse says "read the next bit of data." Like a metronome keeping the conversation in sync.</li>
-  <li><strong>CS (Chip Select):</strong> "Hey, display, I'm talking to you." Pulled low to start communication, high to stop.</li>
-  <li><strong>DC (Data/Command):</strong> Tells the display whether the bits coming in are a command ("change your settings") or data ("here are pixels to display"). High = data, Low = command.</li>
-  <li><strong>RST (Reset):</strong> Reboots the display. Pulled low briefly to reset, then back high.</li>
-  <li><strong>BUSY:</strong> The display tells the ESP32 "I'm still refreshing, don't send anything yet." The ESP32 checks this pin before sending new data.</li>
+  <li>Soldering iron + solder wire (needed once, to attach header pins to the DESPI-C579 &mdash; ~8 solder joints total, beginner-friendly)</li>
+  <li>Computer (Windows/Mac/Linux) with free USB port</li>
+  <li>Fingernail or small flathead screwdriver (for opening the ZIF ribbon-cable connector)</li>
+  <li><em>Optional but helpful:</em> Multimeter for checking continuity if something doesn't work</li>
 </ul>
 
-<h3>Wiring: ESP32 &rarr; DESPI-C579 &rarr; Display</h3>
-<p>The DESPI-C579 driver board has a ZIF connector for the display's ribbon cable on one side, and 8 pins for connecting to the ESP32 on the other. Here's the pin-by-pin wiring:</p>
+<!-- ============ PHASE 1: SOFTWARE ============ -->
+<div class="phase-header"><span class="phase-num">1</span><span class="phase-title">Software Setup (Arduino IDE + Libraries)</span><span class="phase-time">45 min</span></div>
+
+<h3 id="eink-software">1.1 Install Arduino IDE 2.x</h3>
+<p>Arduino IDE is the free program where you'll write code and upload it to the ESP32. It handles compiling, library management, and USB uploading.</p>
+<ul class="findings">
+  <li>Go to <a href="https://www.arduino.cc/en/software" target="_blank">arduino.cc/en/software</a></li>
+  <li>Download the "Arduino IDE 2.x" installer for your OS (Windows, Mac, or Linux)</li>
+  <li>Run the installer. Accept all defaults. On Mac, drag it to Applications.</li>
+  <li>Launch Arduino IDE. You'll see an empty sketch with <code>setup()</code> and <code>loop()</code> functions.</li>
+</ul>
+
+<h3>1.2 Add ESP32 Board Support</h3>
+<p>Arduino IDE doesn't know about ESP32 by default. You have to add Espressif's board package URL.</p>
+<ul class="findings">
+  <li>In Arduino IDE, go to <strong>File &rarr; Preferences</strong> (Windows/Linux) or <strong>Arduino IDE &rarr; Settings</strong> (macOS)</li>
+  <li>Find the field labeled <strong>"Additional boards manager URLs"</strong></li>
+  <li>Paste this URL: <code>https://espressif.github.io/arduino-esp32/package_esp32_index.json</code></li>
+  <li>Click OK</li>
+  <li>Go to <strong>Tools &rarr; Board &rarr; Boards Manager</strong></li>
+  <li>Search for <strong>"esp32"</strong></li>
+  <li>Install <strong>"esp32 by Espressif Systems"</strong> (version 3.x or higher). This takes ~3-5 minutes.</li>
+  <li>After installation: <strong>Tools &rarr; Board &rarr; ESP32 Arduino &rarr; ESP32 Dev Module</strong></li>
+</ul>
+
+<h3>1.3 Install USB Driver (Windows/Mac only)</h3>
+<p>The ESP32 DevKit V1 uses a <strong>CP2102</strong> USB-to-serial chip. Most modern computers have the driver pre-installed, but if your ESP32 doesn't appear as a COM port, install it manually.</p>
+<ul class="findings">
+  <li>Download the driver from <a href="https://www.silabs.com/developers/usb-to-uart-bridge-vcp-drivers" target="_blank">Silicon Labs CP2102 drivers</a></li>
+  <li>Install, reboot if prompted</li>
+  <li>Plug in your ESP32 via USB. Open Arduino IDE &rarr; <strong>Tools &rarr; Port</strong>. You should see a new port appear (COM3+ on Windows, /dev/cu.SLAB_USBtoUART on Mac, /dev/ttyUSB0 on Linux). Select it.</li>
+</ul>
+
+<h3>1.4 Install Required Arduino Libraries</h3>
+<p>You need three libraries to drive the display and run a WiFi HTTP server. Install via <strong>Sketch &rarr; Include Library &rarr; Manage Libraries</strong>:</p>
+<ul class="findings">
+  <li><strong>Adafruit GFX Library</strong> by Adafruit (latest version) &mdash; provides drawing primitives like <code>fillRect</code>, <code>drawLine</code>, <code>setCursor</code>, <code>print</code></li>
+  <li><strong>Adafruit BusIO</strong> by Adafruit (auto-installed as dependency of GFX)</li>
+  <li><strong>ArduinoJson</strong> by Benoit Blanchon (version 7.x) &mdash; parses JSON from HTTP requests</li>
+</ul>
+
+<p>For the WiFi HTTP server, you'll use <code>WebServer.h</code> which is built into the ESP32 board package &mdash; no separate install needed.</p>
+
+<h3>1.5 Download Good Display's Sample Code for GDEY0579F52</h3>
+<p>The critical step. The popular GxEPD2 library does <strong>not</strong> support the GDEY0579F52 (dual IST7158 controllers). You must use Good Display's vendor-provided sample code.</p>
+<ul class="findings">
+  <li>Go to <a href="https://www.good-display.com/companyfile/1832.html" target="_blank">good-display.com/companyfile/1832.html</a></li>
+  <li>Download the ZIP file (titled "ESP32 demo for GDEY0579F52" or similar, ~21KB)</li>
+  <li>Unzip it. You should see a folder containing an <code>.ino</code> file and a few <code>.h</code> / <code>.cpp</code> support files (<code>EPD_5in79_G.h</code>, <code>EPD_5in79_G.cpp</code>, <code>DEV_Config.h</code>, <code>DEV_Config.cpp</code>, <code>ImageData.h</code>)</li>
+  <li>Open the <code>.ino</code> file in Arduino IDE. Arduino IDE will ask to move it into a properly-named folder &mdash; click yes.</li>
+</ul>
+
+<div class="callout"><div class="label">Why this sample code is critical</div><p>The GDEY0579F52 uses <strong>two IST7158 driver ICs</strong> internally (Master + Slave). Each controls half the screen. The register addressing uses offsets (Master at 0x00-0x79, Slave at Master + 0x80). No generic e-paper library understands this &mdash; they'll only drive half the screen. Good Display's sample has the correct init sequence and register map baked in.</p></div>
+
+<!-- ============ PHASE 2: WIRING ============ -->
+<div class="phase-header"><span class="phase-num">2</span><span class="phase-title">Hardware Wiring (Step by Step)</span><span class="phase-time">30 min</span></div>
+
+<h3 id="eink-wiring">2.1 Understand the Components</h3>
+<p>Before wiring, know what each piece does:</p>
+<ul class="findings">
+  <li><strong>ESP32 DevKit:</strong> The "brain." Has WiFi, Bluetooth, 30 GPIO pins, and runs your code.</li>
+  <li><strong>DESPI-C579 driver board:</strong> A small PCB with a ZIF connector (for the display's ribbon cable) on one end and 8 pin headers on the other end. Contains the voltage regulation and booster circuitry the display needs.</li>
+  <li><strong>GDEY0579F52 display:</strong> The actual e-ink panel. Has a thin, flexible 24-pin ribbon cable (FPC) permanently attached.</li>
+  <li><strong>Breadboard:</strong> A plastic board with rows of holes that are electrically connected underneath. Lets you prototype without soldering.</li>
+</ul>
+
+<h3>2.2 Solder Header Pins to DESPI-C579 (One-Time)</h3>
+<p>The DESPI-C579 ships with a strip of 8 loose pins. You need to solder them into the 8 holes on the board so it can plug into a breadboard.</p>
+<ul class="findings">
+  <li><strong>Step 1:</strong> Break off an 8-pin strip of male header pins (or use whatever came with the board).</li>
+  <li><strong>Step 2:</strong> Push the pins through the holes on the DESPI-C579 from the bottom, so the <em>long</em> ends stick up through the board.</li>
+  <li><strong>Step 3:</strong> Insert the short ends into a breadboard to hold the pins straight while you solder.</li>
+  <li><strong>Step 4:</strong> Heat your soldering iron to ~350&deg;C. Touch the iron to each pin + pad junction for ~1 second, then feed solder into the joint until it flows around the pin.</li>
+  <li><strong>Step 5:</strong> Repeat for all 8 pins. Let cool for a minute.</li>
+  <li><strong>Step 6:</strong> Remove from the breadboard. Each pin should have a shiny, cone-shaped solder joint. If any look dull or blobby, reheat and add a touch more solder.</li>
+</ul>
+
+<h3>2.3 Connect the Display Ribbon Cable to the DESPI-C579</h3>
+<p>This is the most delicate step. The ribbon cable is fragile &mdash; don't tug on it.</p>
+<ul class="findings">
+  <li><strong>Step 1:</strong> Find the ZIF connector on the DESPI-C579. It's the wide black connector with a small flip-up tab on one edge.</li>
+  <li><strong>Step 2:</strong> Gently flip the black tab <strong>up</strong> (perpendicular to the board) using a fingernail or small flathead screwdriver. It should move maybe 2mm. Don't force it.</li>
+  <li><strong>Step 3:</strong> Take the display's ribbon cable. Notice that it has shiny metal contacts only on <em>one side</em>.</li>
+  <li><strong>Step 4:</strong> Slide the ribbon cable into the ZIF slot with the contacts facing <strong>down</strong> (toward the PCB). Push gently until the cable stops &mdash; about 5-6mm deep.</li>
+  <li><strong>Step 5:</strong> Flip the black tab back <strong>down</strong> (flat against the PCB) to clamp the cable in place.</li>
+  <li><strong>Step 6:</strong> Very gently tug the cable to verify it's locked. It should not come out.</li>
+</ul>
+
+<h3>2.4 Place ESP32 and DESPI-C579 on the Breadboard</h3>
+<ul class="findings">
+  <li><strong>Step 1:</strong> Orient the breadboard with the center gap running horizontally. Each side has rows numbered 1-30 and columns labeled a-e (left) and f-j (right).</li>
+  <li><strong>Step 2:</strong> Push the ESP32 onto the left half of the breadboard so it straddles the center gap. Each pin on the ESP32 should go into its own row. The USB port should face to the outside (left).</li>
+  <li><strong>Step 3:</strong> Push the DESPI-C579 onto the right half of the breadboard, also straddling the center gap. The 8 pins go into 8 consecutive rows.</li>
+</ul>
+
+<h3>2.5 Wire 8 Connections with Jumper Wires</h3>
+<p>Here's the exact pin-by-pin wiring. Follow this table precisely:</p>
 
 <table class="result-table">
-<tr><th>DESPI-C579 Pin</th><th>Function</th><th>ESP32 Pin</th><th>Wire Color (suggested)</th></tr>
-<tr><td>BUSY</td><td>Display busy status</td><td>GPIO 4</td><td>Yellow</td></tr>
-<tr><td>RES</td><td>Reset</td><td>GPIO 16</td><td>White</td></tr>
-<tr><td>D/C</td><td>Data/Command select</td><td>GPIO 17</td><td>Green</td></tr>
-<tr><td>CS</td><td>Chip select</td><td>GPIO 5</td><td>Orange</td></tr>
-<tr><td>SCK</td><td>SPI clock</td><td>GPIO 18</td><td>Blue</td></tr>
-<tr><td>SDI</td><td>SPI data (MOSI)</td><td>GPIO 23</td><td>Blue</td></tr>
-<tr><td>GND</td><td>Ground</td><td>GND</td><td>Black</td></tr>
-<tr><td>3.3V</td><td>Power</td><td>3V3</td><td>Red</td></tr>
+<tr><th>DESPI-C579 Pin</th><th>Function</th><th>ESP32 Pin (GPIO)</th><th>Suggested Wire Color</th></tr>
+<tr><td><strong>3.3V</strong></td><td>Power in</td><td><strong>3V3</strong></td><td>Red</td></tr>
+<tr><td><strong>GND</strong></td><td>Ground</td><td><strong>GND</strong></td><td>Black</td></tr>
+<tr><td><strong>SDI</strong></td><td>SPI data out (MOSI)</td><td><strong>GPIO 23</strong></td><td>Blue</td></tr>
+<tr><td><strong>SCK</strong></td><td>SPI clock</td><td><strong>GPIO 18</strong></td><td>Blue</td></tr>
+<tr><td><strong>CS</strong></td><td>Chip select</td><td><strong>GPIO 5</strong></td><td>Orange</td></tr>
+<tr><td><strong>D/C</strong></td><td>Data/Command select</td><td><strong>GPIO 17</strong></td><td>Green</td></tr>
+<tr><td><strong>RES</strong></td><td>Reset</td><td><strong>GPIO 16</strong></td><td>White</td></tr>
+<tr><td><strong>BUSY</strong></td><td>Display busy status</td><td><strong>GPIO 4</strong></td><td>Yellow</td></tr>
 </table>
 
-<div class="callout"><div class="label">Why no level shifter?</div><p>Unlike the LED build (which needs a 74AHCT125 because WS2812B LEDs want 5V logic), the e-ink display runs on <strong>3.3V logic</strong> &mdash; the same as the ESP32. They speak the same voltage natively. Fewer components = fewer things that can go wrong.</p></div>
+<p>For each row above, use a male-to-male jumper wire to connect the DESPI-C579 pin (via its breadboard row) to the matching ESP32 GPIO pin (via its breadboard row).</p>
 
-<h3>Step-by-Step Assembly</h3>
+<div class="callout"><div class="label">Common wiring mistake</div><p>The most common failure is swapping <strong>SDI (MOSI) and SCK</strong>. If the display stays blank after upload, check these two first. The next most common is a loose GND connection &mdash; make sure the jumper is pushed all the way into the breadboard.</p></div>
+
+<h3>2.6 Final Wiring Check</h3>
+<p>Before plugging in USB, verify:</p>
 <ul class="findings">
-  <li><strong>Step 1:</strong> Solder the header pins onto the DESPI-C579 board (it ships with loose headers). 8 pins in a row &mdash; this is a beginner-friendly solder job.</li>
-  <li><strong>Step 2:</strong> Connect the display to the DESPI-C579. Open the ZIF connector's black tab (flip it up gently with a fingernail), slide the ribbon cable in with contacts facing down, close the tab to lock it. <strong>This is the most delicate step</strong> &mdash; be gentle with the tab.</li>
-  <li><strong>Step 3:</strong> Place the ESP32 on a breadboard straddling the center channel.</li>
-  <li><strong>Step 4:</strong> Place the DESPI-C579 on the breadboard nearby.</li>
-  <li><strong>Step 5:</strong> Run 8 jumper wires between the DESPI-C579 and ESP32 pins per the table above. Double-check each one &mdash; wrong SPI wiring produces a blank screen with no error message.</li>
-  <li><strong>Step 6:</strong> Plug USB into the ESP32. No external power needed &mdash; the 3.3V pin supplies enough current for the display.</li>
+  <li>All 8 jumper wires are firmly seated</li>
+  <li>No two jumper wires share the same row (which would short them together)</li>
+  <li>The ribbon cable is locked into the DESPI-C579</li>
+  <li>No exposed metal on jumper wires is touching anything else</li>
 </ul>
 
 <div class="slide-fig"><img src="/figures/battery/eink_assembly.png" alt="E-ink assembly" onclick="openLightbox(this)"><div class="caption">Assembly in progress: inserting the FPC ribbon cable into the ZIF connector on the DESPI-C579 driver board. ESP32 on breadboard with jumper wires connected. 3D-printed enclosure ready for final mounting.</div></div>
 
-<h3>Software Setup</h3>
+<!-- ============ PHASE 3: FIRST TEST ============ -->
+<div class="phase-header"><span class="phase-num">3</span><span class="phase-title">First Upload &amp; Smoke Test</span><span class="phase-time">20 min</span></div>
+
+<h3 id="eink-firsttest">3.1 Match the Sample Code Pin Definitions to Your Wiring</h3>
+<p>Open the Good Display sample code in Arduino IDE. In <code>DEV_Config.h</code>, find the pin definitions near the top. Change them to match the table above:</p>
+
+<span class="code-label">DEV_Config.h (edit to match your wiring)</span>
+<pre class="code-block"><span class="cmt">// Pin mapping for ESP32 DevKit V1</span>
+<span class="kw">#define</span> EPD_SCK_PIN    <span class="num">18</span>
+<span class="kw">#define</span> EPD_MOSI_PIN   <span class="num">23</span>
+<span class="kw">#define</span> EPD_CS_PIN     <span class="num">5</span>
+<span class="kw">#define</span> EPD_DC_PIN     <span class="num">17</span>
+<span class="kw">#define</span> EPD_RST_PIN    <span class="num">16</span>
+<span class="kw">#define</span> EPD_BUSY_PIN   <span class="num">4</span></pre>
+
+<h3>3.2 Select Board and Port</h3>
 <ul class="findings">
-  <li><strong>Arduino IDE 2.x</strong> &mdash; same setup as the LED build (install from arduino.cc, add ESP32 board package)</li>
-  <li><strong>Good Display's sample code</strong> &mdash; download from <a href="https://www.good-display.com/companyfile/1832.html" target="_blank">good-display.com</a> (ESP32-specific ZIP). This is vendor-provided code that directly supports the GDEY0579F52 and its dual IST7158 controllers.</li>
+  <li><strong>Tools &rarr; Board &rarr; ESP32 Arduino &rarr; ESP32 Dev Module</strong></li>
+  <li><strong>Tools &rarr; Port &rarr;</strong> select the port your ESP32 is on (COM3+ on Windows, /dev/cu.SLAB_USBtoUART on Mac)</li>
+  <li><strong>Tools &rarr; Upload Speed &rarr; 921600</strong> (or 115200 if you get upload errors)</li>
+  <li><strong>Tools &rarr; Partition Scheme &rarr; Default 4MB with spiffs</strong></li>
 </ul>
 
-<div class="callout"><div class="label">Important: GxEPD2 Compatibility</div><p>The popular GxEPD2 library does <strong>NOT</strong> currently support the GDEY0579F52 (IST7158x2 dual controller). It supports the older GDEY0579F51 (HX8717, now discontinued). <strong>Use Good Display's vendor sample code instead.</strong> It handles the dual-controller register addressing that GxEPD2 doesn't know about. The code uses the same Adafruit GFX drawing functions (<code>fillRect</code>, <code>drawRect</code>, <code>setCursor</code>, <code>print</code>) so the API is familiar.</p></div>
-
-<h3>Key Code: Drawing a Charge Bar</h3>
-<p>The 792x272 pixel display is perfect for a horizontal battery bar. With 4 colors available (white, black, red, yellow), you map charge zones directly:</p>
-
-<div class="callout"><div class="label">Charge Bar Logic</div><p>
-<code>fillWidth = (percentage / 100.0) * 680 pixels</code><br><br>
-<strong>Color mapping:</strong><br>
-0-20% charge &rarr; fill with <strong>RED</strong> (danger zone)<br>
-21-100% charge &rarr; fill with <strong>YELLOW</strong> (healthy zone)<br>
-Battery outline &rarr; <strong>BLACK</strong> lines on <strong>WHITE</strong> background<br>
-Percentage text &rarr; <strong>BLACK</strong>, large font, centered<br><br>
-<strong>Optional zone bars:</strong> Split the fill into segments &mdash; first 20% always red, 21-50% amber (approximated by dithering red+yellow pixels), 51-100% yellow. This gives a visual "fuel gauge" effect.
-</p></div>
-
-<p>The display refreshes by flashing the entire screen through black/white cycles, then settling on the final image. This takes <strong>12 seconds</strong> (fast mode) and is visually conspicuous &mdash; but it only happens when the charge level changes, not continuously.</p>
-
-<h3>Enclosure Design</h3>
+<h3>3.3 Upload the Unmodified Sample Code</h3>
+<p>This is your "hello world." The sample will display test patterns to verify everything works before you write custom code.</p>
 <ul class="findings">
-  <li><strong>Form factor:</strong> A rectangular battery shape (~160mm tall x 65mm wide x 30mm deep) with a flat face for the display. The 5.79" bar display (151mm x 57mm) fits on the front face with ~7mm of bezel on each side.</li>
-  <li><strong>Display window:</strong> Cut a rectangular opening in the front face, sized to the display's active area (139mm x 47.7mm). The display panel sits behind the opening, flush with the surface or slightly recessed.</li>
-  <li><strong>Mounting:</strong> The display is thin (1mm) and flat. Mount it behind the window with thin double-sided tape on the bezel area. Route the ribbon cable through a slot to the DESPI-C579 inside.</li>
-  <li><strong>No frosted acrylic needed.</strong> E-ink is already matte and paper-like. No diffusion layer required &mdash; the display IS the surface.</li>
-  <li><strong>Optional:</strong> A thin clear acrylic or glass pane over the window for protection, but the display is readable without it.</li>
+  <li>Click the <strong>Upload</strong> button (right-arrow icon, top-left). First compile takes 2-3 minutes.</li>
+  <li>When you see <strong>"Connecting..."</strong> in the output, press and hold the <strong>BOOT</strong> button on the ESP32. Release when upload starts. Some boards auto-reset and skip this.</li>
+  <li>Upload should finish with <strong>"Hard resetting via RTS pin..."</strong></li>
+  <li>The display will flash black/white several times, then show the sample image &mdash; usually color bars or the Good Display logo in red/yellow/black.</li>
 </ul>
 
-<h3>Build Sequence (1-2 Weeks)</h3>
+<div class="callout"><div class="label">If nothing happens</div><p>The display stays blank: 90% chance it's a wiring mistake. 10% chance the ribbon cable is seated wrong. Go back to Phase 2.3 and re-do the ribbon insertion. If that doesn't fix it, check the wiring table pin-by-pin with a multimeter in continuity mode.</p></div>
+
+<!-- ============ PHASE 4: COMPLETE FIRMWARE ============ -->
+<div class="phase-header"><span class="phase-num">4</span><span class="phase-title">The Complete Charge Bar Firmware</span><span class="phase-time">2 hours</span></div>
+
+<h3 id="eink-chargecode">4.1 Overview of What We're Building</h3>
+<p>Once the sample code works, we'll replace its logic with a real Psych_Battery sketch that:</p>
 <ul class="findings">
-  <li><strong>Day 1:</strong> Order parts. While waiting: install Arduino IDE, add ESP32 board package, download Good Display sample code.</li>
-  <li><strong>Day 2-3:</strong> Parts arrive. Solder headers onto DESPI-C579. Connect display ribbon cable. Wire to ESP32 on breadboard (8 jumper wires). Upload sample code &mdash; verify the display refreshes and shows test patterns.</li>
-  <li><strong>Day 4-5:</strong> Modify the sample code to draw a battery bar. Implement the <code>drawBatteryBar(percentage)</code> function. Test with hardcoded values (100, 75, 50, 25, 10, 0) to verify color mapping and layout.</li>
-  <li><strong>Day 6:</strong> Add WiFi HTTP endpoint so the Python backend can send charge level. Test full loop: Python sends POST &rarr; ESP32 receives &rarr; display updates with new charge bar.</li>
-  <li><strong>Day 7-8:</strong> Design and 3D print the enclosure at Jacobs Hall or Supernode. Rectangular battery shape with display window cutout.</li>
-  <li><strong>Day 9-10:</strong> Mount display in enclosure. Route ribbon cable and USB. Final integration test.</li>
+  <li>Connects to your WiFi network</li>
+  <li>Runs an HTTP server on port 80</li>
+  <li>Accepts <code>POST /charge</code> requests with JSON like <code>{"level": 75}</code></li>
+  <li>Also accepts <code>GET /charge?level=75</code> for easy browser testing</li>
+  <li>Maps 0-100 charge to a 4-color battery bar (red zone, yellow zone, outline, text)</li>
+  <li>Updates the display using fast refresh (12 seconds)</li>
+  <li>Does a full refresh every 10 updates to clear ghosting</li>
+  <li>Falls back to serial commands if WiFi isn't available</li>
 </ul>
 
-<h3>Comparison: E-Ink vs LED vs EL Wire</h3>
+<h3>4.2 The Main Arduino Sketch</h3>
+<p>Create a new sketch (<strong>File &rarr; New Sketch</strong>) and paste this code. Save as <code>psych_battery_eink.ino</code>. You'll also need to copy the Good Display support files (<code>EPD_5in79_G.h</code>, <code>EPD_5in79_G.cpp</code>, <code>DEV_Config.h</code>, <code>DEV_Config.cpp</code>) into the sketch folder.</p>
+
+<span class="code-label">psych_battery_eink.ino &mdash; main firmware</span>
+<pre class="code-block"><span class="cmt">/*
+ * Psych_Battery E-Ink Firmware
+ * Hardware: ESP32 DevKit V1 + GDEY0579F52 (5.79" 4-color e-ink) + DESPI-C579
+ * Receives charge level (0-100) via WiFi HTTP or Serial
+ * Displays a 4-color battery bar on the e-ink panel
+ */</span>
+
+<span class="kw">#include</span> <span class="str">&lt;WiFi.h&gt;</span>
+<span class="kw">#include</span> <span class="str">&lt;WebServer.h&gt;</span>
+<span class="kw">#include</span> <span class="str">&lt;ArduinoJson.h&gt;</span>
+<span class="kw">#include</span> <span class="str">&lt;Adafruit_GFX.h&gt;</span>
+<span class="kw">#include</span> <span class="str">"EPD_5in79_G.h"</span>
+<span class="kw">#include</span> <span class="str">"DEV_Config.h"</span>
+
+<span class="cmt">// ============ CONFIG - EDIT THESE ============</span>
+<span class="kw">const</span> <span class="ty">char</span>* WIFI_SSID     = <span class="str">"YourWiFiName"</span>;
+<span class="kw">const</span> <span class="ty">char</span>* WIFI_PASSWORD = <span class="str">"YourWiFiPassword"</span>;
+<span class="kw">const</span> <span class="ty">int</span>   HTTP_PORT     = <span class="num">80</span>;
+
+<span class="cmt">// Display dimensions (GDEY0579F52)</span>
+<span class="kw">#define</span> EPD_W <span class="num">792</span>
+<span class="kw">#define</span> EPD_H <span class="num">272</span>
+
+<span class="cmt">// 4-color palette (Good Display's sample defines these)</span>
+<span class="kw">#define</span> EPD_WHITE   <span class="num">0x1</span>
+<span class="kw">#define</span> EPD_BLACK   <span class="num">0x0</span>
+<span class="kw">#define</span> EPD_YELLOW  <span class="num">0x2</span>
+<span class="kw">#define</span> EPD_RED     <span class="num">0x3</span>
+
+<span class="cmt">// Framebuffer: 2 bits per pixel x 792 x 272 = 53,856 bytes</span>
+<span class="ty">UBYTE</span> <span class="fn">*BlackImage</span>;
+
+<span class="ty">WebServer</span> server(HTTP_PORT);
+<span class="ty">int</span>  currentCharge   = <span class="num">100</span>;
+<span class="ty">int</span>  refreshCount    = <span class="num">0</span>;
+<span class="ty">bool</span> needsRedraw     = <span class="kw">true</span>;
+
+<span class="cmt">// ============ SETUP ============</span>
+<span class="ty">void</span> <span class="fn">setup</span>() {
+  Serial.begin(<span class="num">115200</span>);
+  Serial.println(<span class="str">"\nPsych_Battery E-Ink starting..."</span>);
+
+  <span class="cmt">// Init display hardware (GPIO, SPI)</span>
+  <span class="kw">if</span> (DEV_Module_Init() != <span class="num">0</span>) {
+    Serial.println(<span class="str">"ERROR: display init failed"</span>);
+    <span class="kw">while</span> (<span class="num">1</span>);
+  }
+
+  <span class="cmt">// Allocate framebuffer (PSRAM if available, else heap)</span>
+  <span class="ty">UDOUBLE</span> Imagesize = (EPD_W * <span class="num">2</span> * EPD_H) / <span class="num">8</span>;
+  BlackImage = (<span class="ty">UBYTE</span> *)ps_malloc(Imagesize);
+  <span class="kw">if</span> (BlackImage == <span class="kw">NULL</span>) BlackImage = (<span class="ty">UBYTE</span> *)malloc(Imagesize);
+  <span class="kw">if</span> (BlackImage == <span class="kw">NULL</span>) {
+    Serial.println(<span class="str">"ERROR: no memory for framebuffer"</span>);
+    <span class="kw">while</span> (<span class="num">1</span>);
+  }
+
+  <span class="cmt">// Initial full refresh - clear any ghosts from shipping</span>
+  EPD_5in79_G_Init();
+  drawChargeBar(currentCharge);
+  EPD_5in79_G_Display(BlackImage);
+  EPD_5in79_G_Sleep();
+
+  <span class="cmt">// Connect to WiFi</span>
+  WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
+  Serial.print(<span class="str">"Connecting to WiFi"</span>);
+  <span class="ty">int</span> retries = <span class="num">0</span>;
+  <span class="kw">while</span> (WiFi.status() != WL_CONNECTED && retries &lt; <span class="num">20</span>) {
+    delay(<span class="num">500</span>);
+    Serial.print(<span class="str">"."</span>);
+    retries++;
+  }
+  <span class="kw">if</span> (WiFi.status() == WL_CONNECTED) {
+    Serial.print(<span class="str">"\nConnected! IP: "</span>);
+    Serial.println(WiFi.localIP());
+  } <span class="kw">else</span> {
+    Serial.println(<span class="str">"\nWiFi failed. Running serial-only mode."</span>);
+  }
+
+  <span class="cmt">// HTTP endpoints</span>
+  server.on(<span class="str">"/charge"</span>, HTTP_POST, handleChargePost);
+  server.on(<span class="str">"/charge"</span>, HTTP_GET,  handleChargeGet);
+  server.on(<span class="str">"/"</span>, []() {
+    server.send(<span class="num">200</span>, <span class="str">"text/plain"</span>,
+      <span class="str">"Psych_Battery ready. POST /charge with JSON {\"level\": 0-100}"</span>);
+  });
+  server.begin();
+  Serial.println(<span class="str">"HTTP server on port 80"</span>);
+}
+
+<span class="cmt">// ============ LOOP ============</span>
+<span class="ty">void</span> <span class="fn">loop</span>() {
+  server.handleClient();
+  handleSerialInput();
+  <span class="kw">if</span> (needsRedraw) {
+    redrawDisplay();
+    needsRedraw = <span class="kw">false</span>;
+  }
+}
+
+<span class="cmt">// ============ HTTP HANDLERS ============</span>
+<span class="ty">void</span> <span class="fn">handleChargePost</span>() {
+  <span class="kw">if</span> (!server.hasArg(<span class="str">"plain"</span>)) {
+    server.send(<span class="num">400</span>, <span class="str">"text/plain"</span>, <span class="str">"Missing JSON body"</span>);
+    <span class="kw">return</span>;
+  }
+  <span class="ty">JsonDocument</span> doc;
+  <span class="ty">DeserializationError</span> err = deserializeJson(doc, server.arg(<span class="str">"plain"</span>));
+  <span class="kw">if</span> (err) {
+    server.send(<span class="num">400</span>, <span class="str">"text/plain"</span>, <span class="str">"Invalid JSON"</span>);
+    <span class="kw">return</span>;
+  }
+  <span class="ty">int</span> level = doc[<span class="str">"level"</span>] | -<span class="num">1</span>;
+  <span class="kw">if</span> (level &lt; <span class="num">0</span> || level &gt; <span class="num">100</span>) {
+    server.send(<span class="num">400</span>, <span class="str">"text/plain"</span>, <span class="str">"level must be 0-100"</span>);
+    <span class="kw">return</span>;
+  }
+  setCharge(level);
+  server.send(<span class="num">200</span>, <span class="str">"application/json"</span>,
+    <span class="str">"{\"ok\":true,\"level\":"</span> + String(level) + <span class="str">"}"</span>);
+}
+
+<span class="ty">void</span> <span class="fn">handleChargeGet</span>() {
+  <span class="kw">if</span> (!server.hasArg(<span class="str">"level"</span>)) {
+    server.send(<span class="num">200</span>, <span class="str">"application/json"</span>,
+      <span class="str">"{\"level\":"</span> + String(currentCharge) + <span class="str">"}"</span>);
+    <span class="kw">return</span>;
+  }
+  <span class="ty">int</span> level = server.arg(<span class="str">"level"</span>).toInt();
+  <span class="kw">if</span> (level &lt; <span class="num">0</span> || level &gt; <span class="num">100</span>) {
+    server.send(<span class="num">400</span>, <span class="str">"text/plain"</span>, <span class="str">"level must be 0-100"</span>);
+    <span class="kw">return</span>;
+  }
+  setCharge(level);
+  server.send(<span class="num">200</span>, <span class="str">"application/json"</span>,
+    <span class="str">"{\"ok\":true,\"level\":"</span> + String(level) + <span class="str">"}"</span>);
+}
+
+<span class="cmt">// ============ SERIAL FALLBACK ============</span>
+<span class="ty">void</span> <span class="fn">handleSerialInput</span>() {
+  <span class="kw">if</span> (Serial.available()) {
+    <span class="ty">int</span> level = Serial.parseInt();
+    <span class="kw">if</span> (level &gt;= <span class="num">0</span> && level &lt;= <span class="num">100</span>) {
+      Serial.print(<span class="str">"Serial input: charge = "</span>);
+      Serial.println(level);
+      setCharge(level);
+    }
+    <span class="kw">while</span> (Serial.available()) Serial.read();
+  }
+}
+
+<span class="ty">void</span> <span class="fn">setCharge</span>(<span class="ty">int</span> level) {
+  <span class="kw">if</span> (level != currentCharge) {
+    currentCharge = level;
+    needsRedraw = <span class="kw">true</span>;
+  }
+}
+
+<span class="cmt">// ============ DISPLAY ============</span>
+<span class="ty">void</span> <span class="fn">redrawDisplay</span>() {
+  Serial.print(<span class="str">"Drawing charge = "</span>);
+  Serial.println(currentCharge);
+
+  drawChargeBar(currentCharge);
+
+  refreshCount++;
+  <span class="cmt">// Full refresh every 10 updates to clear ghosting</span>
+  <span class="kw">if</span> (refreshCount % <span class="num">10</span> == <span class="num">0</span>) {
+    EPD_5in79_G_Init();  <span class="cmt">// full refresh mode (20s)</span>
+  } <span class="kw">else</span> {
+    EPD_5in79_G_Init_Fast();  <span class="cmt">// fast refresh mode (12s)</span>
+  }
+  EPD_5in79_G_Display(BlackImage);
+  EPD_5in79_G_Sleep();
+}
+
+<span class="ty">void</span> <span class="fn">drawChargeBar</span>(<span class="ty">int</span> percentage) {
+  <span class="cmt">// Clear framebuffer to white</span>
+  Paint_NewImage(BlackImage, EPD_W, EPD_H, <span class="num">0</span>, EPD_WHITE);
+  Paint_Clear(EPD_WHITE);
+
+  <span class="cmt">// Battery body: rounded rect outline in black</span>
+  <span class="ty">int</span> bx = <span class="num">40</span>,  by = <span class="num">50</span>;
+  <span class="ty">int</span> bw = <span class="num">680</span>, bh = <span class="num">172</span>;
+  Paint_DrawRectangle(bx, by, bx + bw, by + bh,
+                      EPD_BLACK, DOT_PIXEL_3X3, DRAW_FILL_EMPTY);
+
+  <span class="cmt">// Battery positive terminal nub on the right</span>
+  Paint_DrawRectangle(bx + bw, by + <span class="num">50</span>, bx + bw + <span class="num">25</span>, by + bh - <span class="num">50</span>,
+                      EPD_BLACK, DOT_PIXEL_3X3, DRAW_FILL_FULL);
+
+  <span class="cmt">// Calculate fill width (within the outline, with 8px margin)</span>
+  <span class="ty">int</span> innerX = bx + <span class="num">8</span>;
+  <span class="ty">int</span> innerY = by + <span class="num">8</span>;
+  <span class="ty">int</span> innerW = bw - <span class="num">16</span>;
+  <span class="ty">int</span> innerH = bh - <span class="num">16</span>;
+  <span class="ty">int</span> fillW  = (innerW * percentage) / <span class="num">100</span>;
+
+  <span class="cmt">// Color the fill: red for 0-20%, yellow for 21-100%</span>
+  <span class="ty">int</span> fillColor = (percentage &lt;= <span class="num">20</span>) ? EPD_RED : EPD_YELLOW;
+  <span class="kw">if</span> (fillW &gt; <span class="num">0</span>) {
+    Paint_DrawRectangle(innerX, innerY, innerX + fillW, innerY + innerH,
+                        fillColor, DOT_PIXEL_1X1, DRAW_FILL_FULL);
+  }
+
+  <span class="cmt">// Percentage text, large, centered inside the bar</span>
+  <span class="ty">char</span> txt[<span class="num">8</span>];
+  snprintf(txt, <span class="kw">sizeof</span>(txt), <span class="str">"%d%%"</span>, percentage);
+  Paint_DrawString_EN(bx + bw/<span class="num">2</span> - <span class="num">60</span>, by + bh/<span class="num">2</span> - <span class="num">28</span>,
+                      txt, &amp;Font48, EPD_BLACK, EPD_WHITE);
+
+  <span class="cmt">// "PSYCH_BATTERY" label across top</span>
+  Paint_DrawString_EN(<span class="num">250</span>, <span class="num">10</span>, <span class="str">"PSYCH_BATTERY"</span>,
+                      &amp;Font24, EPD_WHITE, EPD_BLACK);
+}</pre>
+
+<h3>4.3 Edit Your WiFi Credentials</h3>
+<p>Find these two lines near the top:</p>
+<pre class="code-block"><span class="kw">const</span> <span class="ty">char</span>* WIFI_SSID     = <span class="str">"YourWiFiName"</span>;
+<span class="kw">const</span> <span class="ty">char</span>* WIFI_PASSWORD = <span class="str">"YourWiFiPassword"</span>;</pre>
+<p>Replace with your actual network name and password. <strong>ESP32 only supports 2.4 GHz WiFi</strong> &mdash; if your home network is 5 GHz only, either use the hotspot from your phone (usually 2.4 GHz) or ask your router admin to enable a 2.4 GHz band.</p>
+
+<h3>4.4 Upload and Monitor</h3>
+<ul class="findings">
+  <li>Click <strong>Upload</strong>. Wait for compile + flash (~1 minute after libraries are cached).</li>
+  <li>Open <strong>Tools &rarr; Serial Monitor</strong>. Set baud rate to <strong>115200</strong>.</li>
+  <li>You should see:<br>
+    <code>Psych_Battery E-Ink starting...</code><br>
+    <code>Connecting to WiFi.....</code><br>
+    <code>Connected! IP: 192.168.1.123</code><br>
+    <code>HTTP server on port 80</code></li>
+  <li>Write down the IP address &mdash; you'll need it for the Python backend.</li>
+  <li>The display will do one full refresh showing a 100% battery bar in yellow with black "100%" text.</li>
+</ul>
+
+<h3>4.5 Test via Serial</h3>
+<p>In the Serial Monitor, type a number 0-100 and press Enter. The display should refresh with the new charge level within 12 seconds. Try:</p>
+<ul class="findings">
+  <li><code>85</code> &rarr; large yellow fill, "85%" text</li>
+  <li><code>50</code> &rarr; half-filled yellow bar</li>
+  <li><code>15</code> &rarr; short red fill (in the danger zone)</li>
+  <li><code>0</code> &rarr; empty outline, "0%" text</li>
+</ul>
+
+<h3>4.6 Test via Browser</h3>
+<p>Open a browser on any device on the same WiFi network. Go to <code>http://192.168.1.123/charge?level=42</code> (use your IP). You should see a JSON response and the display will update.</p>
+
+<!-- ============ PHASE 5: PYTHON BACKEND ============ -->
+<div class="phase-header"><span class="phase-num">5</span><span class="phase-title">Python Backend Integration</span><span class="phase-time">1 hour</span></div>
+
+<h3 id="eink-python">5.1 Install Python Dependencies</h3>
+<p>On your laptop (the "brain" that calculates mental energy and sends it to the battery):</p>
+<pre class="code-block">pip install requests aw-client pyserial</pre>
+<ul class="findings">
+  <li><code>requests</code> &mdash; sends HTTP requests to the ESP32 over WiFi</li>
+  <li><code>aw-client</code> &mdash; queries ActivityWatch for app/website usage data</li>
+  <li><code>pyserial</code> &mdash; optional fallback for sending charge over USB if WiFi fails</li>
+</ul>
+
+<h3>5.2 The Charge Sender Module</h3>
+<p>Save this as <code>charge_sender.py</code> &mdash; it's the interface between your energy-score calculator and the physical battery:</p>
+
+<span class="code-label">charge_sender.py &mdash; unified charge interface</span>
+<pre class="code-block"><span class="str">"""
+charge_sender.py - sends charge level (0-100) to the Psych_Battery.
+Tries WiFi first, falls back to serial, logs locally if both fail.
+"""</span>
+<span class="kw">import</span> requests
+<span class="kw">import</span> serial
+<span class="kw">import</span> time
+<span class="kw">import</span> logging
+<span class="kw">from</span> pathlib <span class="kw">import</span> Path
+
+<span class="cmt"># ============ CONFIG ============</span>
+BATTERY_IP   = <span class="str">"192.168.1.123"</span>   <span class="cmt"># from Serial Monitor</span>
+BATTERY_PORT = <span class="num">80</span>
+SERIAL_PORT  = <span class="str">"COM3"</span>            <span class="cmt"># Windows; "/dev/cu.SLAB_USBtoUART" on Mac</span>
+SERIAL_BAUD  = <span class="num">115200</span>
+LOG_FILE     = Path.home() / <span class="str">".psych_battery"</span> / <span class="str">"charge.log"</span>
+LOG_FILE.parent.mkdir(exist_ok=<span class="kw">True</span>)
+
+logging.basicConfig(level=logging.INFO,
+    format=<span class="str">"%(asctime)s [%(levelname)s] %(message)s"</span>)
+log = logging.getLogger(<span class="str">"charge_sender"</span>)
+
+<span class="kw">class</span> <span class="ty">ChargeSender</span>:
+    <span class="kw">def</span> <span class="fn">__init__</span>(self, ip=BATTERY_IP, serial_port=SERIAL_PORT):
+        self.ip = ip
+        self.serial_port = serial_port
+        self.last_level = <span class="kw">None</span>
+
+    <span class="kw">def</span> <span class="fn">send</span>(self, level: <span class="ty">int</span>) -&gt; <span class="ty">bool</span>:
+        <span class="str">"""Send charge level 0-100. Returns True on success."""</span>
+        <span class="kw">if</span> <span class="kw">not</span> (<span class="num">0</span> &lt;= level &lt;= <span class="num">100</span>):
+            <span class="kw">raise</span> <span class="ty">ValueError</span>(<span class="str">f"level must be 0-100, got {level}"</span>)
+
+        <span class="cmt"># Skip redundant sends (e-ink refresh is slow, don't waste it)</span>
+        <span class="kw">if</span> level == self.last_level:
+            log.debug(<span class="str">f"Skipping duplicate level {level}"</span>)
+            <span class="kw">return</span> <span class="kw">True</span>
+
+        self._log_local(level)
+
+        <span class="cmt"># Try WiFi first</span>
+        <span class="kw">if</span> self._send_http(level):
+            self.last_level = level
+            <span class="kw">return</span> <span class="kw">True</span>
+
+        <span class="cmt"># Fall back to serial</span>
+        <span class="kw">if</span> self._send_serial(level):
+            self.last_level = level
+            <span class="kw">return</span> <span class="kw">True</span>
+
+        log.error(<span class="str">"Both WiFi and serial failed"</span>)
+        <span class="kw">return</span> <span class="kw">False</span>
+
+    <span class="kw">def</span> <span class="fn">_send_http</span>(self, level: <span class="ty">int</span>) -&gt; <span class="ty">bool</span>:
+        url = <span class="str">f"http://{self.ip}:{BATTERY_PORT}/charge"</span>
+        <span class="kw">try</span>:
+            r = requests.post(url, json={<span class="str">"level"</span>: level}, timeout=<span class="num">3</span>)
+            <span class="kw">if</span> r.status_code == <span class="num">200</span>:
+                log.info(<span class="str">f"HTTP OK: level={level}"</span>)
+                <span class="kw">return</span> <span class="kw">True</span>
+            log.warning(<span class="str">f"HTTP {r.status_code}: {r.text}"</span>)
+        <span class="kw">except</span> requests.exceptions.RequestException <span class="kw">as</span> e:
+            log.warning(<span class="str">f"HTTP failed: {e}"</span>)
+        <span class="kw">return</span> <span class="kw">False</span>
+
+    <span class="kw">def</span> <span class="fn">_send_serial</span>(self, level: <span class="ty">int</span>) -&gt; <span class="ty">bool</span>:
+        <span class="kw">try</span>:
+            <span class="kw">with</span> serial.Serial(self.serial_port, SERIAL_BAUD, timeout=<span class="num">2</span>) <span class="kw">as</span> s:
+                s.write(<span class="str">f"{level}\n"</span>.encode())
+                s.flush()
+                log.info(<span class="str">f"Serial OK: level={level}"</span>)
+                <span class="kw">return</span> <span class="kw">True</span>
+        <span class="kw">except</span> serial.SerialException <span class="kw">as</span> e:
+            log.warning(<span class="str">f"Serial failed: {e}"</span>)
+            <span class="kw">return</span> <span class="kw">False</span>
+
+    <span class="kw">def</span> <span class="fn">_log_local</span>(self, level: <span class="ty">int</span>):
+        <span class="kw">with</span> open(LOG_FILE, <span class="str">"a"</span>) <span class="kw">as</span> f:
+            f.write(<span class="str">f"{time.time()},{level}\n"</span>)
+
+<span class="cmt"># ============ CLI TEST ============</span>
+<span class="kw">if</span> __name__ == <span class="str">"__main__"</span>:
+    <span class="kw">import</span> sys
+    <span class="kw">if</span> len(sys.argv) != <span class="num">2</span>:
+        print(<span class="str">"Usage: python charge_sender.py &lt;level 0-100&gt;"</span>)
+        sys.exit(<span class="num">1</span>)
+    sender = ChargeSender()
+    ok = sender.send(<span class="ty">int</span>(sys.argv[<span class="num">1</span>]))
+    sys.exit(<span class="num">0</span> <span class="kw">if</span> ok <span class="kw">else</span> <span class="num">1</span>)</pre>
+
+<h3>5.3 Connect to the Psych_Battery Energy Score</h3>
+<p>This is where Tech Stack meets Build Guide. Here's a minimal example that queries ActivityWatch, computes an energy score, and pushes it to the display:</p>
+
+<span class="code-label">energy_score_to_battery.py &mdash; the core loop</span>
+<pre class="code-block"><span class="str">"""
+Polls ActivityWatch every 5 minutes, computes a mental energy score,
+and pushes it to the Psych_Battery display.
+"""</span>
+<span class="kw">import</span> time
+<span class="kw">from</span> datetime <span class="kw">import</span> datetime, timedelta
+<span class="kw">from</span> aw_client <span class="kw">import</span> ActivityWatchClient
+<span class="kw">from</span> charge_sender <span class="kw">import</span> ChargeSender
+
+<span class="cmt"># ============ TUNING - TWEAK THESE ============</span>
+POLL_INTERVAL_SEC = <span class="num">300</span>       <span class="cmt"># 5 minutes between updates</span>
+DAILY_BUDGET_MIN  = <span class="num">480</span>       <span class="cmt"># 8 hours of "charged" time per workday</span>
+
+<span class="cmt"># Drain weights per minute of use</span>
+DRAIN_PER_MIN = {
+    <span class="str">"chatgpt.com"</span>:     <span class="num">2.0</span>,   <span class="cmt"># extended AI chat drains fast</span>
+    <span class="str">"claude.ai"</span>:       <span class="num">2.0</span>,
+    <span class="str">"app.slack.com"</span>:   <span class="num">1.2</span>,   <span class="cmt"># digital comms</span>
+    <span class="str">"mail.google.com"</span>: <span class="num">1.0</span>,
+    <span class="str">"twitter.com"</span>:     <span class="num">1.5</span>,
+    <span class="str">"x.com"</span>:           <span class="num">1.5</span>,
+    <span class="str">"linkedin.com"</span>:    <span class="num">1.3</span>,
+    <span class="str">"news.ycombinator.com"</span>: <span class="num">0.8</span>,
+    <span class="str">"_default_"</span>:       <span class="num">0.3</span>,   <span class="cmt"># any other active tab</span>
+}
+
+<span class="cmt"># Recharge weights per minute away</span>
+RECHARGE_IDLE_PER_MIN = <span class="num">0.4</span>    <span class="cmt"># AFK/idle = gentle recharge</span>
+
+<span class="kw">def</span> <span class="fn">compute_energy_score</span>():
+    <span class="str">"""Query ActivityWatch for today's activity; return 0-100."""</span>
+    aw = ActivityWatchClient(<span class="str">"psych_battery"</span>, testing=<span class="kw">False</span>)
+    now = datetime.now().astimezone()
+    start = now.replace(hour=<span class="num">9</span>, minute=<span class="num">0</span>, second=<span class="num">0</span>, microsecond=<span class="num">0</span>)
+
+    <span class="cmt"># Get the web-domain bucket (installed via aw-watcher-web extension)</span>
+    buckets = aw.get_buckets()
+    web_bucket = next(
+        (b <span class="kw">for</span> b <span class="kw">in</span> buckets <span class="kw">if</span> <span class="str">"aw-watcher-web"</span> <span class="kw">in</span> b),
+        <span class="kw">None</span>
+    )
+    afk_bucket = next(
+        (b <span class="kw">for</span> b <span class="kw">in</span> buckets <span class="kw">if</span> <span class="str">"aw-watcher-afk"</span> <span class="kw">in</span> b),
+        <span class="kw">None</span>
+    )
+
+    drain = <span class="num">0.0</span>
+    <span class="kw">if</span> web_bucket:
+        events = aw.get_events(web_bucket, start=start, end=now)
+        <span class="kw">for</span> e <span class="kw">in</span> events:
+            domain  = e.data.get(<span class="str">"url"</span>, <span class="str">""</span>).split(<span class="str">"/"</span>)[<span class="num">2</span>] <span class="kw">if</span> <span class="str">"://"</span> <span class="kw">in</span> e.data.get(<span class="str">"url"</span>, <span class="str">""</span>) <span class="kw">else</span> <span class="str">""</span>
+            minutes = e.duration.total_seconds() / <span class="num">60</span>
+            weight  = DRAIN_PER_MIN.get(domain, DRAIN_PER_MIN[<span class="str">"_default_"</span>])
+            drain  += minutes * weight
+
+    recharge = <span class="num">0.0</span>
+    <span class="kw">if</span> afk_bucket:
+        events = aw.get_events(afk_bucket, start=start, end=now)
+        <span class="kw">for</span> e <span class="kw">in</span> events:
+            <span class="kw">if</span> e.data.get(<span class="str">"status"</span>) == <span class="str">"afk"</span>:
+                minutes   = e.duration.total_seconds() / <span class="num">60</span>
+                recharge += minutes * RECHARGE_IDLE_PER_MIN
+
+    <span class="cmt"># Net energy: start at 100, subtract drain, add recharge, cap 0-100</span>
+    net_drain_pct = (drain - recharge) / DAILY_BUDGET_MIN * <span class="num">100</span>
+    energy = max(<span class="num">0</span>, min(<span class="num">100</span>, <span class="ty">int</span>(<span class="num">100</span> - net_drain_pct)))
+    <span class="kw">return</span> energy
+
+<span class="cmt"># ============ MAIN LOOP ============</span>
+<span class="kw">def</span> <span class="fn">main</span>():
+    sender = ChargeSender()
+    <span class="kw">while</span> <span class="kw">True</span>:
+        <span class="kw">try</span>:
+            score = compute_energy_score()
+            print(<span class="str">f"[{datetime.now():%H:%M}] Energy = {score}%"</span>)
+            sender.send(score)
+        <span class="kw">except</span> <span class="ty">Exception</span> <span class="kw">as</span> e:
+            print(<span class="str">f"Error: {e}"</span>)
+        time.sleep(POLL_INTERVAL_SEC)
+
+<span class="kw">if</span> __name__ == <span class="str">"__main__"</span>:
+    main()</pre>
+
+<h3>5.4 Run and Verify the Full Loop</h3>
+<ul class="findings">
+  <li>Start ActivityWatch (if not already running): <code>aw-qt</code> or open the app</li>
+  <li>Make sure the browser extension is installed (Chrome/Firefox)</li>
+  <li>Run <code>python energy_score_to_battery.py</code></li>
+  <li>Every 5 minutes, you should see console output like <code>[14:30] Energy = 72%</code> and the e-ink display should update within 12 seconds of each calculation</li>
+  <li>As you use Slack or ChatGPT, the score should gradually drop. After an AFK break, it should rise slightly.</li>
+</ul>
+
+<div class="callout"><div class="label">Sanity check</div><p>For the first hour, run with <code>POLL_INTERVAL_SEC = 60</code> (every minute) to verify updates flow through. Once you trust the pipeline, set it back to 300 (every 5 minutes) &mdash; e-ink displays have a limited number of refresh cycles before ghosting accumulates, and 5 minutes gives the score time to meaningfully change.</p></div>
+
+<!-- ============ PHASE 6: ENCLOSURE ============ -->
+<div class="phase-header"><span class="phase-num">6</span><span class="phase-title">Enclosure &amp; Mounting</span><span class="phase-time">3-4 hours</span></div>
+
+<h3 id="eink-enclosure">6.1 Form Factor Considerations</h3>
+<p>The GDEY0579F52 is <strong>151 &times; 57mm</strong> (outline) with a <strong>139 &times; 48mm</strong> active area. That's roughly 6" &times; 2.25" &mdash; larger than a typical AA battery. Design choices:</p>
+<ul class="findings">
+  <li><strong>Elongated battery form:</strong> Make the whole enclosure ~170mm tall &times; 65mm wide &times; 30mm deep. The display sits on the front face; the ESP32 + DESPI-C579 fits inside.</li>
+  <li><strong>Horizontal "battery brick":</strong> Lay the display horizontally on a shorter wide enclosure &mdash; more like a power bank than an AA cell.</li>
+  <li><strong>Recessed window:</strong> Cut the window to 139 &times; 48mm (matching the active area exactly). The display's bezel (6mm on all sides) sits behind the opaque front face, hiding the edges.</li>
+</ul>
+
+<h3>6.2 3D Print at Jacobs Hall or Supernode</h3>
+<ul class="findings">
+  <li>Design in Fusion 360 (free for UC Berkeley students) or Onshape</li>
+  <li>Print in white or black PLA, 0.2mm layer height, 20% infill</li>
+  <li>Two parts: front face (with window) and rear shell. Join with M3 screws or friction fit.</li>
+  <li>Add a slot on the back for the USB cable exit and a hole for the ribbon cable to pass from display to driver board inside</li>
+</ul>
+
+<h3>6.3 Mount the Display</h3>
+<ul class="findings">
+  <li><strong>Step 1:</strong> Clean the inside of the front face and the bezel of the display with isopropyl alcohol</li>
+  <li><strong>Step 2:</strong> Apply thin double-sided tape (3M VHB F9460PC, 0.15mm thick) around the bezel area only &mdash; never on the active area</li>
+  <li><strong>Step 3:</strong> Route the ribbon cable through the internal slot to where the DESPI-C579 sits</li>
+  <li><strong>Step 4:</strong> Carefully press the display into the window opening so the active area is visible through the cutout</li>
+  <li><strong>Step 5:</strong> Secure the DESPI-C579 and ESP32 inside the rear shell with foam tape or a 3D-printed cradle</li>
+</ul>
+
+<div class="callout"><div class="label">No frosted acrylic needed</div><p>Unlike the LED build, e-ink is already matte and paper-like. The display surface IS the final surface. You can optionally add a thin clear acrylic pane over the window for physical protection, but it reduces contrast slightly and isn't required.</p></div>
+
+<!-- ============ COMPARISON ============ -->
+<h3>Comparison: E-Ink vs LED Alternatives</h3>
 <table class="result-table">
-<tr><th></th><th>E-Ink</th><th>LED + Frosted Glass</th><th>EL Wire + Resin</th></tr>
-<tr><td><strong>Cost</strong></td><td>~$50-65</td><td>~$80-130</td><td>~$195-295</td></tr>
-<tr><td><strong>Complexity</strong></td><td>Low (8 wires, no extra components)</td><td>Medium (level shifter, capacitor, power supply)</td><td>High (TRIACs, resin casting, AC voltage)</td></tr>
-<tr><td><strong>Blue light</strong></td><td>None (reflective)</td><td>Yes (LED emission)</td><td>Minimal (EL phosphor)</td></tr>
-<tr><td><strong>Dark room visible</strong></td><td>No (needs ambient light)</td><td>Yes (emits light)</td><td>Yes (emits light)</td></tr>
-<tr><td><strong>Always-on power</strong></td><td>0 mW (retains image)</td><td>~200-500 mW continuous</td><td>~100-300 mW continuous</td></tr>
-<tr><td><strong>Update speed</strong></td><td>12 seconds (with flash)</td><td>Instant</td><td>Instant</td></tr>
-<tr><td><strong>Information density</strong></td><td>High (text + graphics)</td><td>Low (color + brightness only)</td><td>Low (lit/unlit segments)</td></tr>
-<tr><td><strong>Aesthetic</strong></td><td>Paper-like, minimal, professional</td><td>Ambient glow, warm, organic</td><td>Sci-fi, ethereal, striking</td></tr>
+<tr><th></th><th>E-Ink (this build)</th><th>LED + Frosted Glass</th></tr>
+<tr><td><strong>Cost</strong></td><td>~$55-63</td><td>~$80-130</td></tr>
+<tr><td><strong>Wiring complexity</strong></td><td>8 wires, 0 extra components</td><td>8 wires + level shifter + capacitor + PSU</td></tr>
+<tr><td><strong>Blue light</strong></td><td>None (reflective)</td><td>Yes (LED emission)</td></tr>
+<tr><td><strong>Dark-room visibility</strong></td><td>Needs ambient light</td><td>Self-illuminating</td></tr>
+<tr><td><strong>Always-on power</strong></td><td>0 mW (retains image)</td><td>200-500 mW continuous</td></tr>
+<tr><td><strong>Update speed</strong></td><td>12 sec (full flash)</td><td>Instant</td></tr>
+<tr><td><strong>Information density</strong></td><td>High (text, graphics, percentages)</td><td>Low (color + brightness)</td></tr>
+<tr><td><strong>Aesthetic</strong></td><td>Paper-like, minimal</td><td>Warm ambient glow</td></tr>
 </table>
 
-<div class="callout"><div class="label">When to Choose E-Ink</div><p>Choose e-ink if you value <strong>information density</strong> (displaying percentage, text, icons alongside the bar), <strong>zero blue light</strong> compliance, <strong>daylight readability</strong>, and <strong>ultra-low power</strong>. Choose LED if you want ambient glow visible in dark rooms. Choose EL Wire if you want maximum visual drama. The best prototype might combine e-ink (primary display) + a single RGB LED (dark-room alert).</p></div>
-
-<h3>Troubleshooting</h3>
+<!-- ============ TROUBLESHOOTING ============ -->
+<h3 id="eink-troubleshooting">Troubleshooting Guide</h3>
 <table class="result-table">
-<tr><th>Problem</th><th>Likely Cause</th><th>Fix</th></tr>
-<tr><td>Blank screen, nothing happens</td><td>Ribbon cable not seated, wrong SPI pins</td><td>Re-seat FPC cable (contacts down). Verify all 8 wires match the pin table exactly.</td></tr>
-<tr><td>Only top half or bottom half displays</td><td>Dual controller issue &mdash; only one IST7158 initialized</td><td>Use Good Display's vendor code (not GxEPD2). It handles both controllers. If using DESPI-C02 instead of DESPI-C579, switch to the C579.</td></tr>
-<tr><td>Colors are wrong (red where yellow should be)</td><td>Wrong color mode or init sequence</td><td>Verify the code is using the F52 init sequence, not F51. The register map differs.</td></tr>
-<tr><td>Screen refreshes but shows garbage</td><td>Wrong display class in code</td><td>Make sure you're using the GDEY0579F52 sample, not a generic 5.79" sample.</td></tr>
-<tr><td>Ghosting (faint previous image visible)</td><td>Too many refreshes without full clear</td><td>Normal for e-ink. Do a full white-screen refresh every 5-10 updates to clear ghosts.</td></tr>
-<tr><td>Refresh takes 20+ seconds</td><td>Using full refresh mode instead of fast</td><td>Check the refresh mode parameter in the init code. Fast mode = 12s, full = 20s.</td></tr>
-<tr><td>BUSY pin timeout error</td><td>BUSY wire disconnected or wrong GPIO</td><td>Verify BUSY wire connection. If disconnected, the code falls back to timing delays (slower but functional).</td></tr>
+<tr><th>Symptom</th><th>Likely Cause</th><th>Fix</th></tr>
+<tr><td>Upload fails: "Failed to connect to ESP32"</td><td>Board/Port not selected, or auto-reset circuit faulty</td><td>Tools &rarr; Port &rarr; pick COM port. Press &amp; hold BOOT button on ESP32 while upload starts, release when "Writing" appears.</td></tr>
+<tr><td>Upload fails: "A fatal error occurred: Serial data stream stopped"</td><td>Upload speed too high, or bad USB cable</td><td>Tools &rarr; Upload Speed &rarr; 115200. Swap USB cable (try a known-good data cable).</td></tr>
+<tr><td>Display stays completely blank</td><td>Wiring error (90% of cases) or ribbon cable not seated</td><td>Verify all 8 jumper wires match the pin table. Re-seat the FPC cable (contacts down, tab locked).</td></tr>
+<tr><td>Only top or bottom half displays</td><td>Wrong driver sample &mdash; dual-controller not initialized</td><td>Confirm you're using the F52 sample (not F51, not generic). The F52 sample has the dual IST7158 init sequence.</td></tr>
+<tr><td>Wrong colors (red where yellow should be)</td><td>Color constants swapped or wrong init</td><td>In the sample code, check the palette definitions. Some Good Display samples use 0x2=red, 0x3=yellow (opposite of our code). Adjust the <code>#define EPD_YELLOW / EPD_RED</code> values.</td></tr>
+<tr><td>Ghosting (faint previous image)</td><td>Too many partial refreshes in a row</td><td>Normal. The firmware does a full refresh every 10 updates to clear this. For manual clearing, send the same level twice.</td></tr>
+<tr><td>"Connecting to WiFi...." never ends</td><td>Wrong SSID/password, or 5GHz network</td><td>Double-check credentials. ESP32 only does 2.4GHz &mdash; use a phone hotspot if needed.</td></tr>
+<tr><td>HTTP requests time out</td><td>ESP32 lost WiFi, or wrong IP</td><td>Check the Serial Monitor. If IP has changed, update BATTERY_IP in charge_sender.py. Consider setting a static DHCP lease on your router.</td></tr>
+<tr><td>Refresh takes 20+ seconds every time</td><td>Always using full refresh mode</td><td>Verify the code calls <code>EPD_5in79_G_Init_Fast()</code> most of the time and only <code>EPD_5in79_G_Init()</code> every 10th refresh.</td></tr>
+<tr><td>BUSY pin timeout</td><td>BUSY wire disconnected</td><td>Check the yellow wire from DESPI-C579 BUSY to ESP32 GPIO 4.</td></tr>
+<tr><td>"Out of memory" during boot</td><td>ESP32 without PSRAM, framebuffer too big</td><td>Use ESP32-WROOM-32 (has 520KB SRAM &mdash; enough). If using ESP32-S2 without PSRAM, reduce to a smaller display or enable spiram partitioning.</td></tr>
 </table>
+
+<div class="callout"><div class="label">When to ask for help</div><p>If you've double-checked wiring, re-seated the ribbon cable, and the display still doesn't respond: post on the <a href="https://forum.arduino.cc/" target="_blank">Arduino Forum</a> with "GDEY0579F52 ESP32" in the title, include photos of your wiring, and paste your <code>DEV_Config.h</code> pin definitions. The Good Display sample code maintainers and Jean-Marc Zingg (GxEPD2 author) are both active there.</p></div>
 </div>
 
 </div>
