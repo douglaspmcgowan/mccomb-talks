@@ -1276,9 +1276,9 @@ uint32_t chargeToColor(int level, int brightness) {<br>
 <h3>Table of Contents</h3>
 <div class="toc"><ul>
   <li><a href="#eink-why">Why E-Ink for Psych_Battery</a></li>
-  <li><a href="#eink-bom">Phase 0: Bill of Materials &amp; What to Order</a></li>
+  <li><a href="#eink-bom">Phase 0: Supplies &amp; What's In Your Kit</a></li>
   <li><a href="#eink-software">Phase 1: Software Setup (Arduino IDE + Libraries)</a></li>
-  <li><a href="#eink-wiring">Phase 2: Hardware Wiring (Step by Step)</a></li>
+  <li><a href="#eink-wiring">Phase 2: Hardware Assembly (Kit Plug-and-Play)</a></li>
   <li><a href="#eink-firsttest">Phase 3: First Upload &amp; Smoke Test</a></li>
   <li><a href="#eink-chargecode">Phase 4: The Complete Charge Bar Firmware</a></li>
   <li><a href="#eink-python">Phase 5: Python Backend Integration</a></li>
@@ -1300,33 +1300,60 @@ uint32_t chargeToColor(int level, int brightness) {<br>
 <h3>Full Circuit Blueprint</h3>
 <div class="slide-fig"><img src="/figures/battery/eink_blueprint.png" alt="E-ink circuit blueprint" onclick="openLightbox(this)"><div class="caption">Complete circuit: ESP32 &rarr; SPI signals (MOSI, CLK, CS, DC, RST, BUSY) &rarr; DESPI-C579 driver board &rarr; FPC ribbon cable &rarr; 5.79" 4-color e-ink display showing battery charge bar.</div></div>
 
-<!-- ============ PHASE 0: BOM ============ -->
-<div class="phase-header"><span class="phase-num">0</span><span class="phase-title">Bill of Materials &amp; What to Order</span><span class="phase-time">30 min</span></div>
+<!-- ============ PHASE 0: SUPPLIES ============ -->
+<div class="phase-header"><span class="phase-num">0</span><span class="phase-title">Supplies &amp; What's In Your Kit</span><span class="phase-time">15 min (inventory)</span></div>
 
-<h3 id="eink-bom">Exact Parts List</h3>
+<div class="callout"><div class="label">You bought the ESP32-L(C579) Development Kit from Good Display</div><p>This is the integrated all-in-one kit from buy-lcd.com. It replaces the separate ESP32 DevKit + breadboard + jumper wires + header pins approach. The kit contains everything you need to drive the display &mdash; no breadboard wiring required, no soldering, no purchase of individual electronic components. Just plug the DESPI-C579 into the ESP32-L motherboard, connect the display ribbon cable, and plug in USB.</p></div>
+
+<h3 id="eink-bom">0.1 What's In Your Kit (you already have these)</h3>
 <table class="result-table">
-<tr><th>Component</th><th>Exact Product</th><th>Price</th><th>Where to Buy</th></tr>
-<tr><td>E-Ink Display</td><td>Good Display GDEY0579F52 (5.79", 792&times;272, 4-color RYBW, 139&times;48mm active area)</td><td>~$18-25</td><td><a href="https://buy-lcd.com/products/gdey0579f52" target="_blank">buy-lcd.com</a></td></tr>
-<tr><td>Driver Adapter Board</td><td>DESPI-C579 (24-pin FPC adapter, handles dual IST7158 controllers)</td><td>~$7</td><td><a href="https://buy-lcd.com/products/despi-c579" target="_blank">buy-lcd.com</a></td></tr>
-<tr><td>ESP32 Dev Board</td><td>ESP32-WROOM-32 DevKit V1 (30-pin, CP2102 USB-to-serial)</td><td>~$8</td><td><a href="https://www.amazon.com/HiLetgo-ESP-WROOM-32-Development-Microcontroller-Integrated/dp/B08D5ZD528" target="_blank">HiLetgo 3-pack on Amazon</a></td></tr>
-<tr><td>Breadboard</td><td>Half-size (400-point) solderless breadboard</td><td>~$5</td><td>Amazon (any)</td></tr>
-<tr><td>Jumper Wires</td><td>Male-to-male + male-to-female dupont wires, 10cm</td><td>~$7</td><td>Amazon (any 100-pack)</td></tr>
-<tr><td>Micro-USB Cable</td><td>Data-capable (not charge-only) for ESP32 programming</td><td>~$5</td><td>Any</td></tr>
-<tr><td>Header Pins</td><td>1&times;8 male header pins (for soldering to DESPI-C579)</td><td>~$3</td><td>Amazon</td></tr>
-<tr><td>Enclosure</td><td>3D-printed PLA battery shape (print at Jacobs Hall or Supernode)</td><td>~$3 filament</td><td>UC Berkeley makerspace</td></tr>
+<tr><th>Item</th><th>What It Is</th><th>Replaces (from generic BOM)</th></tr>
+<tr><td><strong>5.79" GDEY0579F52 Display</strong></td><td>4-color e-ink panel, 792&times;272, 139&times;48mm active area, 24-pin FPC ribbon</td><td>The display ($18-25)</td></tr>
+<tr><td><strong>ESP32-L Motherboard</strong></td><td>Pre-built ESP32 dev board with USB port, reset button, LED indicators, flash chip, and a dedicated socket for the DESPI-C579 connector board. WiFi + Bluetooth built in.</td><td>ESP32 DevKit V1 ($8) + breadboard ($5) + jumper wires ($7) + header pins ($3)</td></tr>
+<tr><td><strong>DESPI-C579 Connector Board</strong></td><td>Small adapter board with a 24-pin FPC ZIF connector for the display cable. Plugs directly into the ESP32-L motherboard via a mating header &mdash; no soldering needed.</td><td>DESPI-C579 adapter ($7)</td></tr>
+<tr><td><strong>FPC Connector/Extender</strong></td><td>Spare 24-pin flat flex cable extender in case you need to route the display further from the driver board.</td><td>Not in the generic BOM (bonus component)</td></tr>
+<tr><td><strong>USB Cable</strong></td><td>Data-capable cable for powering and programming the ESP32-L from your laptop.</td><td>Micro-USB cable ($5)</td></tr>
 </table>
 
-<p><strong>Total: ~$55-63.</strong> No level shifter, no capacitor, no external power supply. This is the simplest prototype in the whole lineup.</p>
+<p><strong>Kit covers ~$55 worth of components.</strong> You only need to source the enclosure materials below.</p>
 
-<div class="callout"><div class="label">Ordering tip</div><p>Buy the display and DESPI-C579 <strong>together</strong> from buy-lcd.com in a single order &mdash; saves on international shipping (parts ship from China, 1-3 weeks). Order the ESP32 and breadboard from Amazon while you wait. The Good Display site is legitimate (it's the manufacturer's retail storefront), but first-time credit card charges sometimes get flagged by US banks &mdash; have your phone nearby to approve.</p></div>
+<h3>0.2 Supplies You Still Need (not in the kit)</h3>
+<p>These are physical materials for the enclosure and mounting. Most are available at UC Berkeley makerspaces, but bring this list to make sure you don't get stuck mid-build.</p>
 
-<h3>Required Tools</h3>
+<table class="result-table">
+<tr><th>Supply</th><th>Purpose</th><th>Available at Jacobs?</th><th>Or buy yourself</th></tr>
+<tr><td><strong>PLA filament (white or gray)</strong></td><td>3D-printing the battery-shaped enclosure (~50g needed)</td><td>Yes (Jacobs Hall, Supernode, CITRIS all stock common colors)</td><td>~$25/kg on Amazon if you want a specific color</td></tr>
+<tr><td><strong>3M VHB F9460PC thin double-sided tape</strong></td><td>Permanently mounting the display bezel to the inside of the enclosure. The 0.15mm thin version is ideal.</td><td>Jacobs has generic double-sided tape &mdash; works but less reliable</td><td>~$8 on Amazon (best option)</td></tr>
+<tr><td><strong>Isopropyl alcohol (90%+)</strong></td><td>Cleaning enclosure and display bezel before applying tape</td><td>Yes (Jacobs / CITRIS electronics bench)</td><td>~$5 at any pharmacy if needed</td></tr>
+<tr><td><strong>Fine sandpaper (400 &amp; 600 grit)</strong></td><td>Smoothing 3D-printed enclosure surfaces (layer lines)</td><td>Yes (Jacobs hand tool area)</td><td>~$5 at hardware store</td></tr>
+<tr><td><strong>M3 screws + heat-set inserts (optional)</strong></td><td>Assembling a 2-part enclosure (alternative: friction fit)</td><td>Yes (Jacobs fastener bin)</td><td>~$10 on Amazon if needed</td></tr>
+<tr><td><strong>Clear acrylic pane, 1mm (optional)</strong></td><td>Protective window over the display</td><td>Yes (Jacobs laser cutter has clear acrylic scraps, often free)</td><td>~$5 for a sheet from Canal Plastics</td></tr>
+</table>
+
+<p><strong>Minimum additional cost: $0-$13</strong> depending on how much you source from Jacobs vs buy yourself. The 3M VHB tape is the one item I'd strongly recommend buying fresh.</p>
+
+<h3>0.3 Tools You'll Use (all free at UC Berkeley makerspaces)</h3>
+<table class="result-table">
+<tr><th>Tool</th><th>Purpose</th><th>Where to Find It</th></tr>
+<tr><td><strong>3D printer</strong></td><td>Printing the enclosure (~6-10 hour print for a battery-sized shell)</td><td><a href="https://jacobsinstitute.berkeley.edu/making-at-jacobs/" target="_blank">Jacobs Hall</a> (Ultimakers), <a href="https://supernode.berkeley.edu/" target="_blank">Supernode</a> (24/7, Cory Hall), <a href="https://invent.citris-uc.org/" target="_blank">CITRIS Invention Lab</a> (Sutardja Dai Hall)</td></tr>
+<tr><td><strong>Computer with USB port</strong></td><td>Running Arduino IDE and uploading firmware</td><td>Bring your laptop</td></tr>
+<tr><td><strong>Fingernail or small flathead</strong></td><td>Opening the ZIF ribbon cable connector</td><td>You have fingernails. Otherwise Jacobs has precision screwdriver sets.</td></tr>
+<tr><td><strong>X-Acto knife</strong></td><td>Trimming support material off the 3D print</td><td>Jacobs hand tool area</td></tr>
+<tr><td><strong>Multimeter (optional)</strong></td><td>Debugging if something doesn't work (unlikely with the kit &mdash; nothing to miswire)</td><td>Jacobs and CITRIS electronics benches</td></tr>
+<tr><td><strong>Soldering iron (probably NOT needed)</strong></td><td>Only needed if you're adding an optional RGB LED for dark-room alerts</td><td>Jacobs, CITRIS, Supernode all have soldering stations</td></tr>
+</table>
+
+<div class="callout"><div class="label">Maker Pass required</div><p>To use Jacobs Hall, CITRIS Invention Lab, or most Berkeley makerspaces, you need a Maker Pass. Sign up at <a href="https://jacobsinstitute.berkeley.edu/our-space/" target="_blank">jacobsinstitute.berkeley.edu</a> &mdash; free for UC Berkeley students. Supernode is free and 24/7 with no pass required.</p></div>
+
+<h3>0.4 Final Shopping List (if you want to cover everything)</h3>
+<p>If you want to buy everything yourself instead of relying on makerspace supplies, here's the complete list for the enclosure side:</p>
 <ul class="findings">
-  <li>Soldering iron + solder wire (needed once, to attach header pins to the DESPI-C579 &mdash; ~8 solder joints total, beginner-friendly)</li>
-  <li>Computer (Windows/Mac/Linux) with free USB port</li>
-  <li>Fingernail or small flathead screwdriver (for opening the ZIF ribbon-cable connector)</li>
-  <li><em>Optional but helpful:</em> Multimeter for checking continuity if something doesn't work</li>
+  <li><a href="https://www.amazon.com/3M-VHB-F9460PC-Adhesive-Transfer/dp/B00N56JA1E" target="_blank">3M VHB F9460PC tape</a> &mdash; ~$8</li>
+  <li>PLA filament, 0.5kg in white or gray &mdash; ~$15 on Amazon (if Jacobs is out of stock)</li>
+  <li>Isopropyl alcohol 90%+, small bottle &mdash; ~$5 at any pharmacy</li>
+  <li>Assorted sandpaper pack (400/600/1000 grit) &mdash; ~$6 at Home Depot</li>
 </ul>
+<p><strong>Absolute maximum cost beyond the kit: ~$35.</strong> Realistic cost if using makerspace resources: <strong>$8</strong> (just the VHB tape).</p>
 
 <!-- ============ PHASE 1: SOFTWARE ============ -->
 <div class="phase-header"><span class="phase-num">1</span><span class="phase-title">Software Setup (Arduino IDE + Libraries)</span><span class="phase-time">45 min</span></div>
@@ -1386,106 +1413,107 @@ uint32_t chargeToColor(int level, int brightness) {<br>
 <div class="phase-header"><span class="phase-num">2</span><span class="phase-title">Hardware Wiring (Step by Step)</span><span class="phase-time">30 min</span></div>
 
 <h3 id="eink-wiring">2.1 Understand the Components</h3>
-<p>Before wiring, know what each piece does:</p>
+<p>The ESP32-L(C579) kit is designed so the pieces fit together without any breadboard wiring. Here's what each piece does:</p>
 <ul class="findings">
-  <li><strong>ESP32 DevKit:</strong> The "brain." Has WiFi, Bluetooth, 30 GPIO pins, and runs your code.</li>
-  <li><strong>DESPI-C579 driver board:</strong> A small PCB with a ZIF connector (for the display's ribbon cable) on one end and 8 pin headers on the other end. Contains the voltage regulation and booster circuitry the display needs.</li>
-  <li><strong>GDEY0579F52 display:</strong> The actual e-ink panel. Has a thin, flexible 24-pin ribbon cable (FPC) permanently attached.</li>
-  <li><strong>Breadboard:</strong> A plastic board with rows of holes that are electrically connected underneath. Lets you prototype without soldering.</li>
+  <li><strong>ESP32-L motherboard:</strong> The "brain." Pre-built ESP32-based board with USB port, reset button, status LEDs, and a built-in socket (called the "DESPI interface") where the connector board plugs in. Has WiFi and Bluetooth built in.</li>
+  <li><strong>DESPI-C579 connector board:</strong> A small adapter PCB with a ZIF connector (for the display's ribbon cable) on one end and a set of pins that mate directly into the ESP32-L motherboard's socket on the other end. No soldering, no jumper wires &mdash; it just plugs in.</li>
+  <li><strong>GDEY0579F52 display:</strong> The 4-color e-ink panel with a thin, flexible 24-pin ribbon cable (FPC) permanently attached.</li>
+  <li><strong>USB cable:</strong> Carries both power and data between your laptop and the ESP32-L.</li>
 </ul>
 
-<h3>2.2 Solder Header Pins to DESPI-C579 (One-Time)</h3>
-<p>The DESPI-C579 ships with a strip of 8 loose pins. You need to solder them into the 8 holes on the board so it can plug into a breadboard.</p>
+<div class="callout"><div class="label">What you're NOT doing (compared to a generic build)</div><p>No breadboard. No jumper wires. No soldering header pins. No debugging 8 separate wire connections. The kit was designed specifically to eliminate all of that. Total assembly time is about 10 minutes.</p></div>
+
+<h3>2.2 Plug the DESPI-C579 Into the ESP32-L Motherboard</h3>
+<p>The ESP32-L motherboard has a dedicated socket (a cluster of female pin headers) labeled something like "DESPI" or with matching silkscreen for the connector board.</p>
 <ul class="findings">
-  <li><strong>Step 1:</strong> Break off an 8-pin strip of male header pins (or use whatever came with the board).</li>
-  <li><strong>Step 2:</strong> Push the pins through the holes on the DESPI-C579 from the bottom, so the <em>long</em> ends stick up through the board.</li>
-  <li><strong>Step 3:</strong> Insert the short ends into a breadboard to hold the pins straight while you solder.</li>
-  <li><strong>Step 4:</strong> Heat your soldering iron to ~350&deg;C. Touch the iron to each pin + pad junction for ~1 second, then feed solder into the joint until it flows around the pin.</li>
-  <li><strong>Step 5:</strong> Repeat for all 8 pins. Let cool for a minute.</li>
-  <li><strong>Step 6:</strong> Remove from the breadboard. Each pin should have a shiny, cone-shaped solder joint. If any look dull or blobby, reheat and add a touch more solder.</li>
+  <li><strong>Step 1:</strong> Find the socket on the ESP32-L motherboard. It's the row of female headers designed to receive the DESPI-C579's pins.</li>
+  <li><strong>Step 2:</strong> Orient the DESPI-C579 so its ZIF connector (the wide black connector with a flip-up tab) faces <em>outward</em> (away from the motherboard) &mdash; this gives the ribbon cable room to reach.</li>
+  <li><strong>Step 3:</strong> Align the male pins on the bottom of the DESPI-C579 with the female socket on the motherboard. They should only fit one way; if it feels wrong, rotate 180&deg;.</li>
+  <li><strong>Step 4:</strong> Press firmly and evenly until the connector board is fully seated. The pins should be fully inserted with no gap between the two boards.</li>
 </ul>
 
 <h3>2.3 Connect the Display Ribbon Cable to the DESPI-C579</h3>
-<p>This is the most delicate step. The ribbon cable is fragile &mdash; don't tug on it.</p>
+<p>This is the most delicate step in the entire build. The ribbon cable is fragile &mdash; handle it gently.</p>
 <ul class="findings">
   <li><strong>Step 1:</strong> Find the ZIF connector on the DESPI-C579. It's the wide black connector with a small flip-up tab on one edge.</li>
-  <li><strong>Step 2:</strong> Gently flip the black tab <strong>up</strong> (perpendicular to the board) using a fingernail or small flathead screwdriver. It should move maybe 2mm. Don't force it.</li>
+  <li><strong>Step 2:</strong> Gently flip the black tab <strong>up</strong> (perpendicular to the board) using a fingernail or small flathead screwdriver. It should move about 2mm. Don't force it &mdash; if it resists, you're pushing the wrong part.</li>
   <li><strong>Step 3:</strong> Take the display's ribbon cable. Notice that it has shiny metal contacts only on <em>one side</em>.</li>
-  <li><strong>Step 4:</strong> Slide the ribbon cable into the ZIF slot with the contacts facing <strong>down</strong> (toward the PCB). Push gently until the cable stops &mdash; about 5-6mm deep.</li>
+  <li><strong>Step 4:</strong> Slide the ribbon cable into the ZIF slot with the contacts facing <strong>down</strong> (toward the PCB). Push gently and evenly until the cable stops &mdash; about 5-6mm deep.</li>
   <li><strong>Step 5:</strong> Flip the black tab back <strong>down</strong> (flat against the PCB) to clamp the cable in place.</li>
-  <li><strong>Step 6:</strong> Very gently tug the cable to verify it's locked. It should not come out.</li>
+  <li><strong>Step 6:</strong> Very gently tug on the cable to verify it's locked. It should not come out. If it slides out, re-open the tab and re-seat.</li>
 </ul>
 
-<h3>2.4 Place ESP32 and DESPI-C579 on the Breadboard</h3>
+<div class="callout"><div class="label">Ribbon cable orientation tip</div><p>If you can't tell which side has contacts: look at the ribbon under a bright light. The contacts are slightly shiny/gold-colored compared to the plastic backing. Those shiny contacts go DOWN (facing the PCB), not up. Getting this backwards is the #1 mistake and will show a blank screen even with correct code.</p></div>
+
+<h3>2.4 Connect USB Cable</h3>
 <ul class="findings">
-  <li><strong>Step 1:</strong> Orient the breadboard with the center gap running horizontally. Each side has rows numbered 1-30 and columns labeled a-e (left) and f-j (right).</li>
-  <li><strong>Step 2:</strong> Push the ESP32 onto the left half of the breadboard so it straddles the center gap. Each pin on the ESP32 should go into its own row. The USB port should face to the outside (left).</li>
-  <li><strong>Step 3:</strong> Push the DESPI-C579 onto the right half of the breadboard, also straddling the center gap. The 8 pins go into 8 consecutive rows.</li>
+  <li><strong>Step 1:</strong> Plug the USB cable (included in the kit) into the USB port on the ESP32-L motherboard.</li>
+  <li><strong>Step 2:</strong> Plug the other end into your computer.</li>
+  <li><strong>Step 3:</strong> You should see a power LED light up on the ESP32-L. If nothing lights up, try a different USB cable or port (the kit cable should work, but computer ports can be flaky).</li>
 </ul>
 
-<h3>2.5 Wire 8 Connections with Jumper Wires</h3>
-<p>Here's the exact pin-by-pin wiring. Follow this table precisely:</p>
-
-<table class="result-table">
-<tr><th>DESPI-C579 Pin</th><th>Function</th><th>ESP32 Pin (GPIO)</th><th>Suggested Wire Color</th></tr>
-<tr><td><strong>3.3V</strong></td><td>Power in</td><td><strong>3V3</strong></td><td>Red</td></tr>
-<tr><td><strong>GND</strong></td><td>Ground</td><td><strong>GND</strong></td><td>Black</td></tr>
-<tr><td><strong>SDI</strong></td><td>SPI data out (MOSI)</td><td><strong>GPIO 23</strong></td><td>Blue</td></tr>
-<tr><td><strong>SCK</strong></td><td>SPI clock</td><td><strong>GPIO 18</strong></td><td>Blue</td></tr>
-<tr><td><strong>CS</strong></td><td>Chip select</td><td><strong>GPIO 5</strong></td><td>Orange</td></tr>
-<tr><td><strong>D/C</strong></td><td>Data/Command select</td><td><strong>GPIO 17</strong></td><td>Green</td></tr>
-<tr><td><strong>RES</strong></td><td>Reset</td><td><strong>GPIO 16</strong></td><td>White</td></tr>
-<tr><td><strong>BUSY</strong></td><td>Display busy status</td><td><strong>GPIO 4</strong></td><td>Yellow</td></tr>
-</table>
-
-<p>For each row above, use a male-to-male jumper wire to connect the DESPI-C579 pin (via its breadboard row) to the matching ESP32 GPIO pin (via its breadboard row).</p>
-
-<div class="callout"><div class="label">Common wiring mistake</div><p>The most common failure is swapping <strong>SDI (MOSI) and SCK</strong>. If the display stays blank after upload, check these two first. The next most common is a loose GND connection &mdash; make sure the jumper is pushed all the way into the breadboard.</p></div>
-
-<h3>2.6 Final Wiring Check</h3>
-<p>Before plugging in USB, verify:</p>
+<h3>2.5 Physical Assembly Check</h3>
+<p>Before moving on to software, verify:</p>
 <ul class="findings">
-  <li>All 8 jumper wires are firmly seated</li>
-  <li>No two jumper wires share the same row (which would short them together)</li>
-  <li>The ribbon cable is locked into the DESPI-C579</li>
-  <li>No exposed metal on jumper wires is touching anything else</li>
+  <li>DESPI-C579 is fully seated in the ESP32-L motherboard socket (no visible gap)</li>
+  <li>Ribbon cable is firmly locked in the ZIF connector with the tab pushed down</li>
+  <li>Display panel is free to move on the bench (don't stress the ribbon cable)</li>
+  <li>USB cable is connected between the ESP32-L and your computer</li>
+  <li>Power LED on ESP32-L is lit</li>
 </ul>
 
-<div class="slide-fig"><img src="/figures/battery/eink_assembly.png" alt="E-ink assembly" onclick="openLightbox(this)"><div class="caption">Assembly in progress: inserting the FPC ribbon cable into the ZIF connector on the DESPI-C579 driver board. ESP32 on breadboard with jumper wires connected. 3D-printed enclosure ready for final mounting.</div></div>
+<p>That's it. Hardware assembly is done. With the kit, this takes about 10 minutes compared to the 30+ minutes of breadboard wiring a generic build would require.</p>
+
+<div class="slide-fig"><img src="/figures/battery/eink_assembly.png" alt="E-ink assembly" onclick="openLightbox(this)"><div class="caption">Assembly: the display ribbon cable inserts into the ZIF connector on the DESPI-C579, which in turn plugs into the ESP32-L motherboard's socket. No breadboard, no jumper wires.</div></div>
 
 <!-- ============ PHASE 3: FIRST TEST ============ -->
-<div class="phase-header"><span class="phase-num">3</span><span class="phase-title">First Upload &amp; Smoke Test</span><span class="phase-time">20 min</span></div>
+<div class="phase-header"><span class="phase-num">3</span><span class="phase-title">First Upload &amp; Smoke Test</span><span class="phase-time">15 min</span></div>
 
-<h3 id="eink-firsttest">3.1 Match the Sample Code Pin Definitions to Your Wiring</h3>
-<p>Open the Good Display sample code in Arduino IDE. In <code>DEV_Config.h</code>, find the pin definitions near the top. Change them to match the table above:</p>
+<h3 id="eink-firsttest">3.1 Good News: No Pin Editing Needed</h3>
+<p>With the ESP32-L(C579) kit, the sample code from Good Display is <strong>preconfigured for the ESP32-L motherboard's fixed GPIO pin mapping</strong>. Unlike a generic ESP32 + DESPI-C579 on a breadboard (where you pick your own pins and edit <code>DEV_Config.h</code>), the ESP32-L hardware routes the display signals to specific GPIOs that the sample code already knows about.</p>
 
-<span class="code-label">DEV_Config.h (edit to match your wiring)</span>
-<pre class="code-block"><span class="cmt">// Pin mapping for ESP32 DevKit V1</span>
-<span class="kw">#define</span> EPD_SCK_PIN    <span class="num">18</span>
-<span class="kw">#define</span> EPD_MOSI_PIN   <span class="num">23</span>
-<span class="kw">#define</span> EPD_CS_PIN     <span class="num">5</span>
-<span class="kw">#define</span> EPD_DC_PIN     <span class="num">17</span>
-<span class="kw">#define</span> EPD_RST_PIN    <span class="num">16</span>
-<span class="kw">#define</span> EPD_BUSY_PIN   <span class="num">4</span></pre>
+<div class="callout"><div class="label">Just for reference: ESP32-L pin mapping</div><p>You don't need to change these, but in case you want to know what's happening under the hood, the ESP32-L routes display signals to these GPIOs (documented in the sample code's <code>DEV_Config.h</code>):
+<br><br>
+<code>BUSY &rarr; GPIO 25 | RST &rarr; GPIO 26 | DC &rarr; GPIO 27 | CS &rarr; GPIO 15 | CLK &rarr; GPIO 13 | MOSI &rarr; GPIO 14</code>
+<br><br>
+These are hardwired on the ESP32-L motherboard's PCB. Don't change them in the sample code.</p></div>
 
-<h3>3.2 Select Board and Port</h3>
+<h3>3.2 Download the ESP32-L(C579) Sample Code</h3>
+<p>Good Display provides a specific sample code bundle for the ESP32-L(C579) kit. <strong>This is different from the generic GDEY0579F52 sample</strong> &mdash; make sure you get the right one.</p>
 <ul class="findings">
-  <li><strong>Tools &rarr; Board &rarr; ESP32 Arduino &rarr; ESP32 Dev Module</strong></li>
-  <li><strong>Tools &rarr; Port &rarr;</strong> select the port your ESP32 is on (COM3+ on Windows, /dev/cu.SLAB_USBtoUART on Mac)</li>
-  <li><strong>Tools &rarr; Upload Speed &rarr; 921600</strong> (or 115200 if you get upload errors)</li>
+  <li>Go to the <a href="https://buyepaper.com/products/579-inch-e-paper-display-development-kit-esp32-epaper-board-esp32-lc579" target="_blank">ESP32-L(C579) product page</a> on buyepaper.com</li>
+  <li>Scroll to the "Resources" or "Downloads" section and download the ESP32-L(C579) sample code ZIP (may also be linked as <a href="https://www.good-display.com/companyfile/1832.html" target="_blank">good-display.com/companyfile/1832.html</a>)</li>
+  <li>Unzip the archive. You should see a folder with the main <code>.ino</code> Arduino sketch and support files: <code>EPD_5in79_G.h</code>, <code>EPD_5in79_G.cpp</code>, <code>DEV_Config.h</code>, <code>DEV_Config.cpp</code>, <code>ImageData.h</code>, and <code>GUI_Paint.h/.cpp</code></li>
+  <li>Open the <code>.ino</code> file in Arduino IDE. If it asks to move into a correctly named folder, click yes.</li>
+</ul>
+
+<h3>3.3 Select Board and Port</h3>
+<ul class="findings">
+  <li><strong>Tools &rarr; Board &rarr; ESP32 Arduino &rarr; ESP32 Dev Module</strong> (the ESP32-L uses the generic ESP32 profile)</li>
+  <li><strong>Tools &rarr; Port &rarr;</strong> select the port your ESP32-L is on (COM3+ on Windows, /dev/cu.SLAB_USBtoUART on Mac, /dev/ttyUSB0 on Linux)</li>
+  <li>If no port appears: install the CP2102 USB driver from <a href="https://www.silabs.com/developers/usb-to-uart-bridge-vcp-drivers" target="_blank">Silicon Labs</a>, then unplug and replug the USB cable</li>
+  <li><strong>Tools &rarr; Upload Speed &rarr; 921600</strong> (or 115200 if upload errors occur)</li>
   <li><strong>Tools &rarr; Partition Scheme &rarr; Default 4MB with spiffs</strong></li>
 </ul>
 
-<h3>3.3 Upload the Unmodified Sample Code</h3>
+<h3>3.4 Upload the Unmodified Sample Code</h3>
 <p>This is your "hello world." The sample will display test patterns to verify everything works before you write custom code.</p>
 <ul class="findings">
-  <li>Click the <strong>Upload</strong> button (right-arrow icon, top-left). First compile takes 2-3 minutes.</li>
-  <li>When you see <strong>"Connecting..."</strong> in the output, press and hold the <strong>BOOT</strong> button on the ESP32. Release when upload starts. Some boards auto-reset and skip this.</li>
+  <li>Click the <strong>Upload</strong> button (right-arrow icon, top-left). First compile takes 2-3 minutes (library cache builds).</li>
+  <li>When you see <strong>"Connecting..."</strong> in the output, the ESP32-L should auto-enter flash mode. If it doesn't, press and hold the <strong>BOOT</strong> button on the motherboard, then release after upload starts.</li>
   <li>Upload should finish with <strong>"Hard resetting via RTS pin..."</strong></li>
-  <li>The display will flash black/white several times, then show the sample image &mdash; usually color bars or the Good Display logo in red/yellow/black.</li>
+  <li>Within a few seconds, the display will flash black/white multiple times (this is normal &mdash; e-ink needs multiple cycles to settle particles), then show the sample image &mdash; typically the Good Display logo, color bars, or a demo image in red/yellow/black/white.</li>
 </ul>
 
-<div class="callout"><div class="label">If nothing happens</div><p>The display stays blank: 90% chance it's a wiring mistake. 10% chance the ribbon cable is seated wrong. Go back to Phase 2.3 and re-do the ribbon insertion. If that doesn't fix it, check the wiring table pin-by-pin with a multimeter in continuity mode.</p></div>
+<div class="callout"><div class="label">If the display stays blank</div><p>With the kit, there's no breadboard wiring to mess up, so the most likely culprits are:
+<br><br>
+<strong>1. Ribbon cable seated backward</strong> (contacts facing up instead of down) &mdash; flip the tab, re-seat with contacts DOWN, lock the tab.
+<br><br>
+<strong>2. Ribbon cable not fully inserted</strong> &mdash; push deeper (5-6mm).
+<br><br>
+<strong>3. DESPI-C579 not fully seated</strong> in the motherboard socket &mdash; press firmly until no gap remains.
+<br><br>
+<strong>4. Wrong sample code</strong> &mdash; double-check you downloaded the ESP32-L(C579) version, not the generic GDEY0579F52 or the 2.9" sample.</p></div>
 
 <!-- ============ PHASE 4: COMPLETE FIRMWARE ============ -->
 <div class="phase-header"><span class="phase-num">4</span><span class="phase-title">The Complete Charge Bar Firmware</span><span class="phase-time">2 hours</span></div>
@@ -2008,18 +2036,19 @@ RECHARGE_IDLE_PER_MIN = <span class="num">0.4</span>    <span class="cmt"># AFK/
 <tr><th>Symptom</th><th>Likely Cause</th><th>Fix</th></tr>
 <tr><td>Upload fails: "Failed to connect to ESP32"</td><td>Board/Port not selected, or auto-reset circuit faulty</td><td>Tools &rarr; Port &rarr; pick COM port. Press &amp; hold BOOT button on ESP32 while upload starts, release when "Writing" appears.</td></tr>
 <tr><td>Upload fails: "A fatal error occurred: Serial data stream stopped"</td><td>Upload speed too high, or bad USB cable</td><td>Tools &rarr; Upload Speed &rarr; 115200. Swap USB cable (try a known-good data cable).</td></tr>
-<tr><td>Display stays completely blank</td><td>Wiring error (90% of cases) or ribbon cable not seated</td><td>Verify all 8 jumper wires match the pin table. Re-seat the FPC cable (contacts down, tab locked).</td></tr>
-<tr><td>Only top or bottom half displays</td><td>Wrong driver sample &mdash; dual-controller not initialized</td><td>Confirm you're using the F52 sample (not F51, not generic). The F52 sample has the dual IST7158 init sequence.</td></tr>
-<tr><td>Wrong colors (red where yellow should be)</td><td>Color constants swapped or wrong init</td><td>In the sample code, check the palette definitions. Some Good Display samples use 0x2=red, 0x3=yellow (opposite of our code). Adjust the <code>#define EPD_YELLOW / EPD_RED</code> values.</td></tr>
+<tr><td>Display stays completely blank</td><td>Ribbon cable seated backward, not fully inserted, or DESPI-C579 not fully plugged into motherboard</td><td>Re-seat the FPC ribbon with contacts facing DOWN, push it 5-6mm deep, lock the tab. Press the DESPI-C579 firmly into the motherboard socket &mdash; no gap.</td></tr>
+<tr><td>Only top or bottom half displays</td><td>Wrong sample code &mdash; dual-controller not initialized properly</td><td>Confirm you downloaded the ESP32-L(C579) sample specifically, not a generic GDEY0579F52 sample. The ESP32-L sample is tuned for the motherboard's pin mapping and the dual IST7158 init sequence.</td></tr>
+<tr><td>Wrong colors (red where yellow should be)</td><td>Color constants swapped</td><td>In the sample code, check the palette definitions. Some Good Display samples use 0x2=red, 0x3=yellow (opposite of our charge bar code). Adjust the <code>#define EPD_YELLOW / EPD_RED</code> values in the main sketch to match.</td></tr>
 <tr><td>Ghosting (faint previous image)</td><td>Too many partial refreshes in a row</td><td>Normal. The firmware does a full refresh every 10 updates to clear this. For manual clearing, send the same level twice.</td></tr>
 <tr><td>"Connecting to WiFi...." never ends</td><td>Wrong SSID/password, or 5GHz network</td><td>Double-check credentials. ESP32 only does 2.4GHz &mdash; use a phone hotspot if needed.</td></tr>
-<tr><td>HTTP requests time out</td><td>ESP32 lost WiFi, or wrong IP</td><td>Check the Serial Monitor. If IP has changed, update BATTERY_IP in charge_sender.py. Consider setting a static DHCP lease on your router.</td></tr>
+<tr><td>HTTP requests time out</td><td>ESP32-L lost WiFi, or wrong IP</td><td>Check the Serial Monitor. If IP has changed, update BATTERY_IP in charge_sender.py. Consider setting a static DHCP lease on your router.</td></tr>
 <tr><td>Refresh takes 20+ seconds every time</td><td>Always using full refresh mode</td><td>Verify the code calls <code>EPD_5in79_G_Init_Fast()</code> most of the time and only <code>EPD_5in79_G_Init()</code> every 10th refresh.</td></tr>
-<tr><td>BUSY pin timeout</td><td>BUSY wire disconnected</td><td>Check the yellow wire from DESPI-C579 BUSY to ESP32 GPIO 4.</td></tr>
-<tr><td>"Out of memory" during boot</td><td>ESP32 without PSRAM, framebuffer too big</td><td>Use ESP32-WROOM-32 (has 520KB SRAM &mdash; enough). If using ESP32-S2 without PSRAM, reduce to a smaller display or enable spiram partitioning.</td></tr>
+<tr><td>BUSY pin timeout / display stays in "busy" state</td><td>Bad connection between DESPI-C579 and motherboard, or ribbon cable loose</td><td>Unplug USB, re-seat DESPI-C579 into the motherboard socket firmly, re-seat the ribbon cable, plug USB back in.</td></tr>
+<tr><td>"Out of memory" during boot</td><td>Framebuffer allocation failed</td><td>The ESP32-L's ESP32 chip has 520KB SRAM &mdash; usually enough. If using a custom sketch that's too large, reduce other memory usage or enable PSRAM if present on the motherboard variant.</td></tr>
+<tr><td>COM port doesn't appear on your computer</td><td>Missing CP2102 USB driver</td><td>Install the driver from <a href="https://www.silabs.com/developers/usb-to-uart-bridge-vcp-drivers" target="_blank">Silicon Labs</a>. Unplug and replug USB after install.</td></tr>
 </table>
 
-<div class="callout"><div class="label">When to ask for help</div><p>If you've double-checked wiring, re-seated the ribbon cable, and the display still doesn't respond: post on the <a href="https://forum.arduino.cc/" target="_blank">Arduino Forum</a> with "GDEY0579F52 ESP32" in the title, include photos of your wiring, and paste your <code>DEV_Config.h</code> pin definitions. The Good Display sample code maintainers and Jean-Marc Zingg (GxEPD2 author) are both active there.</p></div>
+<div class="callout"><div class="label">When to ask for help</div><p>If you've re-seated the ribbon cable, confirmed the DESPI-C579 is fully plugged in, and the display still doesn't respond: post on the <a href="https://forum.arduino.cc/" target="_blank">Arduino Forum</a> with "ESP32-L C579 GDEY0579F52" in the title, include photos of your assembled kit, and mention which sample code version you downloaded. Good Display's support team also responds to emails directly at <code>info@good-display.com</code>.</p></div>
 </div>
 
 </div>
