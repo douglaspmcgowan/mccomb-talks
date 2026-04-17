@@ -1,0 +1,132 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 560" font-family="system-ui, -apple-system, sans-serif">
+  <defs>
+    <pattern id="contacts" width="8" height="6" patternUnits="userSpaceOnUse">
+      <rect width="6" height="6" fill="#d4a017"/>
+      <rect x="6" width="2" height="6" fill="#8b6914"/>
+    </pattern>
+    <marker id="arrR" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L8,3 L0,6 Z" fill="#b55"/>
+    </marker>
+    <marker id="arrB" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L8,3 L0,6 Z" fill="#222"/>
+    </marker>
+  </defs>
+  <rect width="900" height="560" fill="#fafafa"/>
+  <text x="450" y="34" text-anchor="middle" font-size="20" font-weight="700" fill="#222">ZIF Ribbon Cable — Correct Orientation</text>
+  <text x="450" y="56" text-anchor="middle" font-size="13" fill="#666">Side-view cross-section of the DESPI-C579 FPC connector. Shiny contacts face DOWN.</text>
+
+  <!-- ===== STEP 1: Lift the tab ===== -->
+  <g transform="translate(40,100)">
+    <text x="135" y="0" text-anchor="middle" font-size="14" font-weight="700" fill="#b55">1. Lift the black tab</text>
+    <text x="135" y="18" text-anchor="middle" font-size="11" fill="#666">flip up ~2mm with a fingernail</text>
+
+    <!-- PCB -->
+    <rect x="0" y="200" width="270" height="28" fill="#006633"/>
+    <text x="135" y="220" text-anchor="middle" font-size="10" fill="#cfe9c5">DESPI-C579 PCB</text>
+
+    <!-- ZIF connector body -->
+    <rect x="40" y="160" width="200" height="40" fill="#222" stroke="#444"/>
+    <text x="140" y="184" text-anchor="middle" font-size="10" fill="#ccc">ZIF connector</text>
+
+    <!-- Tab (open/up) -->
+    <g>
+      <rect x="200" y="80" width="30" height="80" fill="#333" stroke="#555"/>
+      <text x="215" y="124" text-anchor="middle" font-size="9" fill="#ccc" transform="rotate(-90 215 124)">tab UP</text>
+    </g>
+    <!-- curved arrow showing flip -->
+    <path d="M 215 80 Q 260 120 215 160" fill="none" stroke="#b55" stroke-width="2" marker-end="url(#arrR)"/>
+    <text x="270" y="125" font-size="10" fill="#b55">lift</text>
+
+    <!-- Slot opening -->
+    <rect x="40" y="170" width="175" height="12" fill="#000"/>
+    <text x="15" y="177" text-anchor="end" font-size="9" fill="#666">slot</text>
+  </g>
+
+  <!-- ===== STEP 2: Insert ribbon contacts DOWN ===== -->
+  <g transform="translate(330,100)">
+    <text x="135" y="0" text-anchor="middle" font-size="14" font-weight="700" fill="#b55">2. Insert ribbon — contacts DOWN</text>
+    <text x="135" y="18" text-anchor="middle" font-size="11" fill="#666">5-6mm deep, shiny side toward PCB</text>
+
+    <!-- PCB -->
+    <rect x="0" y="200" width="270" height="28" fill="#006633"/>
+    <text x="135" y="220" text-anchor="middle" font-size="10" fill="#cfe9c5">DESPI-C579 PCB</text>
+
+    <!-- ZIF connector body -->
+    <rect x="40" y="160" width="200" height="40" fill="#222" stroke="#444"/>
+
+    <!-- Tab still up -->
+    <rect x="200" y="80" width="30" height="80" fill="#333" stroke="#555"/>
+    <text x="215" y="124" text-anchor="middle" font-size="9" fill="#ccc" transform="rotate(-90 215 124)">tab UP</text>
+
+    <!-- Ribbon cable entering -->
+    <!-- Top plastic side (dull) -->
+    <rect x="-40" y="168" width="210" height="7" fill="#e8c17a" stroke="#b88"/>
+    <!-- Bottom shiny contacts side -->
+    <rect x="-40" y="175" width="210" height="5" fill="url(#contacts)" stroke="#8b6914"/>
+
+    <!-- Insert arrow -->
+    <line x1="-50" y1="172" x2="30" y2="172" stroke="#b55" stroke-width="2" marker-end="url(#arrR)"/>
+    <text x="-10" y="162" text-anchor="middle" font-size="10" fill="#b55" font-weight="600">insert</text>
+
+    <!-- Callout: contacts face down -->
+    <line x1="60" y1="185" x2="60" y2="245" stroke="#b55" stroke-width="1" stroke-dasharray="3,2"/>
+    <text x="60" y="260" text-anchor="middle" font-size="11" font-weight="700" fill="#b55">↑ contacts face DOWN (toward PCB)</text>
+
+    <!-- Top label -->
+    <text x="-10" y="158" font-size="9" fill="#888">plastic backing (dull)</text>
+  </g>
+
+  <!-- ===== STEP 3: Push tab down to lock ===== -->
+  <g transform="translate(620,100)">
+    <text x="135" y="0" text-anchor="middle" font-size="14" font-weight="700" fill="#b55">3. Push tab down to lock</text>
+    <text x="135" y="18" text-anchor="middle" font-size="11" fill="#666">tab flat = cable clamped</text>
+
+    <!-- PCB -->
+    <rect x="0" y="200" width="270" height="28" fill="#006633"/>
+    <text x="135" y="220" text-anchor="middle" font-size="10" fill="#cfe9c5">DESPI-C579 PCB</text>
+
+    <!-- ZIF connector body -->
+    <rect x="40" y="160" width="200" height="40" fill="#222" stroke="#444"/>
+
+    <!-- Tab closed (flat on top of connector) -->
+    <rect x="40" y="155" width="200" height="10" fill="#333" stroke="#555"/>
+    <text x="140" y="163" text-anchor="middle" font-size="9" fill="#ccc">tab DOWN (locked)</text>
+
+    <!-- Ribbon cable - locked in -->
+    <rect x="-40" y="172" width="110" height="5" fill="url(#contacts)" stroke="#8b6914"/>
+    <rect x="-40" y="165" width="110" height="7" fill="#e8c17a" stroke="#b88"/>
+    <rect x="70" y="168" width="150" height="9" fill="#555" stroke="#444"/>
+
+    <!-- Push down arrow -->
+    <line x1="140" y1="100" x2="140" y2="155" stroke="#b55" stroke-width="2" marker-end="url(#arrR)"/>
+    <text x="140" y="95" text-anchor="middle" font-size="10" fill="#b55" font-weight="600">press flat</text>
+
+    <!-- Gentle tug check -->
+    <text x="135" y="275" text-anchor="middle" font-size="11" fill="#2a6" font-weight="600">✓ gentle tug — cable stays locked</text>
+  </g>
+
+  <!-- ===== Bottom: annotated sideways comparison ===== -->
+  <g transform="translate(60,360)">
+    <rect width="780" height="170" fill="#fff" stroke="#ccc" rx="4"/>
+    <text x="20" y="28" font-size="14" font-weight="700" fill="#222">How to tell which side has contacts</text>
+
+    <g transform="translate(30,50)">
+      <!-- Ribbon side view with both sides labeled -->
+      <rect x="0" y="0" width="280" height="30" fill="#e8c17a" stroke="#b88"/>
+      <text x="140" y="19" text-anchor="middle" font-size="11" fill="#6b4d1a" font-weight="600">DULL (plastic backing) — UP</text>
+    </g>
+    <g transform="translate(30,82)">
+      <rect x="0" y="0" width="280" height="16" fill="url(#contacts)" stroke="#8b6914"/>
+      <text x="140" y="12" text-anchor="middle" font-size="10" fill="#fff" font-weight="700">SHINY (gold contacts) — DOWN</text>
+    </g>
+
+    <g transform="translate(360,50)">
+      <text x="0" y="0" font-size="12" font-weight="600" fill="#333">Quick test under bright light:</text>
+      <text x="0" y="22" font-size="11" fill="#555">• The gold/shiny side = contacts.</text>
+      <text x="0" y="40" font-size="11" fill="#555">• The plain matte plastic side = backing.</text>
+      <text x="0" y="58" font-size="11" fill="#555">• Contacts ALWAYS face the PCB (down).</text>
+      <text x="0" y="82" font-size="11" fill="#b55" font-weight="700">Getting this backwards is the #1 first-build failure</text>
+      <text x="0" y="100" font-size="11" fill="#b55">(blank screen with otherwise-correct wiring).</text>
+    </g>
+  </g>
+</svg>

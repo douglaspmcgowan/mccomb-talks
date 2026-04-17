@@ -109,6 +109,17 @@ details.proto-plan .plan-body p { font-size:0.88rem; }
 details.proto-plan .plan-body ul { padding-left:1.25rem; margin:0.5rem 0; font-size:0.88rem; color:var(--text-secondary); }
 details.proto-plan .plan-body li { margin:0.3rem 0; }
 details.proto-plan .plan-body a { color:var(--accent); }
+details.build-help { margin:1rem 0; background:var(--bg-card); border:1px solid var(--border); border-radius:var(--radius); overflow:hidden; }
+details.build-help summary { padding:0.65rem 1rem; font-weight:600; font-size:0.88rem; cursor:pointer; color:var(--accent); list-style:none; display:flex; align-items:center; gap:0.5rem; }
+details.build-help summary::before { content:'\\25B6'; font-size:0.65rem; transition:transform 0.2s; }
+details.build-help[open] summary::before { transform:rotate(90deg); }
+details.build-help .help-body { padding:0 1rem 1rem; font-size:0.88rem; }
+details.build-help .help-body p { font-size:0.88rem; margin:0.5rem 0; }
+details.build-help .help-body ul, details.build-help .help-body ol { padding-left:1.25rem; margin:0.5rem 0; font-size:0.88rem; color:var(--text-secondary); }
+details.build-help .help-body li { margin:0.3rem 0; }
+details.build-help .help-body pre { font-size:0.8rem; margin:0.6rem 0; }
+details.build-help .help-body a { color:var(--accent); }
+details.build-help .help-body code { font-size:0.82rem; }
 .cost-tag { display:inline-block; font-size:0.75rem; font-weight:600; padding:0.15rem 0.5rem; border-radius:999px; background:#dcfce7; color:#166534; margin-left:0.5rem; }
 [data-theme="dark"] .cost-tag { background:#14532d; color:#86efac; }
 pre.code-block { background:#1e1e1e; color:#d4d4d4; padding:1rem 1.25rem; border-radius:var(--radius); overflow-x:auto; font-family:'SF Mono','Monaco','Consolas','Courier New',monospace; font-size:0.8rem; line-height:1.5; margin:1rem 0; border:1px solid var(--border); }
@@ -1230,6 +1241,22 @@ return pageWrapper({ title: 'Psych_Battery: Systems Map & Prototyping', icon: '\
   <li><strong>Realistic with Berkeley makerspace resources: ~$85-95</strong></li>
 </ul>
 
+<details class="build-help"><summary>One-click shopping cart (copy-paste URLs)</summary><div class="help-body">
+<p>Open these in new tabs and add to cart:</p>
+<ul>
+  <li>ESP32 DevKit V1 (3-pack): <a href="https://www.amazon.com/HiLetgo-ESP-WROOM-32-Development-Microcontroller-Integrated/dp/B0718T232Z" target="_blank">amazon.com/dp/B0718T232Z</a></li>
+  <li>24-LED NeoPixel Ring: <a href="https://www.adafruit.com/product/1586" target="_blank">adafruit.com/product/1586</a></li>
+  <li>7-LED NeoPixel Jewel: <a href="https://www.adafruit.com/product/2226" target="_blank">adafruit.com/product/2226</a></li>
+  <li>5V 4A power supply: <a href="https://www.adafruit.com/product/1466" target="_blank">adafruit.com/product/1466</a></li>
+  <li>74AHCT125 level shifter: <a href="https://www.adafruit.com/product/1787" target="_blank">adafruit.com/product/1787</a></li>
+  <li>1000 µF electrolytic cap + 330 Ω resistor kit: <a href="https://www.amazon.com/s?k=electrolytic+capacitor+assortment+kit" target="_blank">capacitor assortment</a> + <a href="https://www.amazon.com/s?k=resistor+kit+1%2F4w" target="_blank">resistor kit</a></li>
+  <li>Half-size breadboard + jumper pack: <a href="https://www.amazon.com/s?k=breadboard+jumper+wire+kit" target="_blank">amazon search</a></li>
+  <li>DC barrel jack screw-terminal adapter: <a href="https://www.amazon.com/s?k=5.5mm+barrel+jack+adapter+screw+terminal" target="_blank">amazon search</a></li>
+  <li>Frosted acrylic sheet, 3mm: <a href="https://www.amazon.com/s?k=frosted+acrylic+sheet+1%2F8" target="_blank">amazon search</a></li>
+</ul>
+<p>Ordering Ring and Jewel from Adafruit in the same order saves shipping. Everything else is Prime-eligible on Amazon.</p>
+</div></details>
+
 <!-- ============ PHASE 1: SOFTWARE ============ -->
 <div class="phase-header"><span class="phase-num">1</span><span class="phase-title">Software Setup (Arduino IDE + Libraries)</span><span class="phase-time">45 min</span></div>
 
@@ -1277,6 +1304,31 @@ return pageWrapper({ title: 'Psych_Battery: Systems Map & Prototyping', icon: '\
 
 <div class="callout"><div class="label">Why async web server instead of WebServer.h?</div><p>The built-in <code>WebServer.h</code> is synchronous &mdash; it blocks the main loop while serving each request. That's fine for e-ink (which blocks during refresh anyway), but for LED breathing animations you want the <code>loop()</code> to run continuously at 60+ fps. ESPAsyncWebServer handles HTTP in the background so your animation never stutters.</p></div>
 
+<details class="build-help"><summary>Library install troubleshooting: "Library not found" even after installing</summary><div class="help-body">
+<p>Arduino IDE 2.x uses a sketchbook folder for user-installed libraries. When the IDE can't find a library you just installed, 99% of the time it's one of:</p>
+<ul>
+  <li><strong>Multiple Arduino installs.</strong> If you have both the Arduino IDE 2.x and the legacy 1.8.x installed, each has a separate libraries folder. The IDE you're actively using must see the library. Uninstall the one you're not using.</li>
+  <li><strong>Wrong sketchbook location.</strong> Check <strong>File &rarr; Preferences &rarr; Sketchbook location</strong>. Libraries go in <code>&lt;sketchbook&gt;/libraries/</code>. Manually verify the ZIP unzipped into a correctly-named folder there (e.g. <code>libraries/ESPAsyncWebServer/</code>, not <code>libraries/ESPAsyncWebServer-master/ESPAsyncWebServer/</code>).</li>
+  <li><strong>Nested folder.</strong> Downloaded ZIPs from GitHub often unzip to a <code>name-master</code> or <code>name-main</code> folder &mdash; rename to just <code>name</code> so Arduino recognizes it.</li>
+  <li><strong>Restart the IDE.</strong> Arduino IDE caches the library list on startup. After manual file moves, quit and reopen fully (not just close the sketch window).</li>
+</ul>
+</div></details>
+
+<details class="build-help"><summary>What "sketch folder" means &mdash; keeping .ino + .h files together</summary><div class="help-body">
+<p>An Arduino "sketch" is a folder, not just the <code>.ino</code> file. The IDE requires the folder name to match the <code>.ino</code> file's name (e.g. <code>psych_battery_led/psych_battery_led.ino</code>). Any support files (<code>.h</code>, <code>.cpp</code>) you want this sketch to use must sit in the <em>same folder</em>.</p>
+<p>On disk, your sketchbook looks like this:</p>
+<pre class="code-block">&lt;sketchbook&gt;/
+  psych_battery_led/
+    psych_battery_led.ino    &larr; the main file (File &rarr; Open this)
+    EPD_5in79_G.h            &larr; any support files go alongside
+    EPD_5in79_G.cpp
+  libraries/
+    Adafruit_NeoPixel/       &larr; libraries live one level up
+    ArduinoJson/
+    ESPAsyncWebServer/</pre>
+<p>When Arduino opens your <code>.ino</code>, any <code>.h</code>/<code>.cpp</code> in the same folder will be compiled together automatically &mdash; no Makefile needed.</p>
+</div></details>
+
 <!-- ============ PHASE 2: WIRING ============ -->
 <div class="phase-header"><span class="phase-num">2</span><span class="phase-title">Hardware Wiring (Breadboard, Step-by-Step)</span><span class="phase-time">45 min</span></div>
 
@@ -1292,6 +1344,21 @@ return pageWrapper({ title: 'Psych_Battery: Systems Map & Prototyping', icon: '\
 </ul>
 
 <div class="callout"><div class="label">Common ground rule</div><p>The ESP32 (USB-powered) and the LEDs (wall-powered) MUST share a common ground, or the data signal reference is different between them and you get garbage output. Every build guide will hammer this point &mdash; it's the #1 mistake.</p></div>
+
+<div class="slide-fig"><img src="/figures/battery/led_schematic.svg" alt="LED wiring schematic (SVG)" onclick="openLightbox(this)"><div class="caption">Clean schematic: ESP32 GPIO 16 &rarr; 330&ohm; resistor &rarr; 74AHCT125 pin 2 (in) &rarr; pin 3 (out) &rarr; Ring+Jewel DIN. Pin 1 (1OE) tied to GND enables the chip's output channel. Pin 14 (VCC) on +5V, pin 7 on GND. 1000 &micro;F capacitor sits on the power rails near the LED to absorb inrush. All three grounds (ESP32, 74AHCT125, LED) are tied on the blue rail.</div></div>
+
+<div class="callout"><div class="label">Use a data-capable USB cable</div><p>Many USB cables in junk drawers are <strong>charge-only</strong> &mdash; the data lines are physically missing. They'll power the ESP32 but the computer won't see a COM port, and Arduino IDE will fail to upload with cryptic "Serial port not found" or "Failed to connect" errors. If the ESP32's power LED comes on but no port appears in <strong>Tools &rarr; Port</strong> after installing the CP2102 driver, swap to a cable you know has worked for data (e.g. the one that came with a phone that actually syncs).</p></div>
+
+<details class="build-help"><summary>Why GPIO 16 specifically? Can I use a different pin?</summary><div class="help-body">
+<p>GPIO 16 is convenient and has no known conflicts on the ESP32 DevKit V1. Any general-purpose output pin works, but avoid these:</p>
+<ul>
+  <li><strong>GPIO 6-11:</strong> connected to the onboard SPI flash &mdash; touching these will crash the ESP32 on boot.</li>
+  <li><strong>GPIO 0, 2, 12, 15:</strong> strapping pins &mdash; they affect boot mode. Usable once booted, but avoid for a data line.</li>
+  <li><strong>GPIO 1, 3:</strong> default UART0 TX/RX &mdash; wiring an LED strip here will fight the Serial Monitor.</li>
+  <li><strong>GPIO 34-39:</strong> input-only &mdash; can't drive a data line.</li>
+</ul>
+<p>Safe alternatives if GPIO 16 is occupied: 17, 18, 19, 21, 22, 23, 25, 26, 27, 32, 33. Update <code>#define LED_PIN</code> in the firmware to match whichever you pick.</p>
+</div></details>
 
 <h3>2.2 Place the ESP32 on the Breadboard</h3>
 <ul class="findings">
@@ -1620,6 +1687,27 @@ Adafruit_NeoPixel strip(NUM_LEDS, LED_PIN, NEO_GRB + NEO_KHZ800);
 <h3>4.7 Test via Browser</h3>
 <p>Open a browser on any device on the same WiFi network. Go to <code>http://192.168.1.123/charge?level=42</code> (use your IP). You should see a JSON response and the LEDs will hue-shift within a few milliseconds.</p>
 
+<details class="build-help"><summary>Serial Monitor line-ending settings (fixes "nothing happens when I type a number")</summary><div class="help-body">
+<p>Arduino IDE's Serial Monitor has a line-ending dropdown at the bottom right. It controls what character is appended when you press Enter:</p>
+<ul>
+  <li><strong>No line ending</strong> &mdash; nothing appended. <code>Serial.parseInt()</code> will block waiting for terminator.</li>
+  <li><strong>Newline (NL)</strong> &mdash; appends <code>\n</code>. Recommended for this firmware.</li>
+  <li><strong>Carriage return (CR)</strong> &mdash; appends <code>\r</code>. Also works with parseInt's default timeout.</li>
+  <li><strong>Both NL &amp; CR</strong> &mdash; appends <code>\r\n</code>. Also works.</li>
+</ul>
+<p>If typing <code>75</code> + Enter does nothing, set line-ending to <strong>Newline</strong> and try again. Also verify baud rate is <strong>115200</strong>.</p>
+</div></details>
+
+<details class="build-help"><summary>Finding your ESP32's IP address (if Serial Monitor didn't show it)</summary><div class="help-body">
+<p>If you missed the boot log, you have three options to find the IP:</p>
+<ol>
+  <li><strong>Re-read Serial Monitor:</strong> press the ESP32's EN/RST button with Serial Monitor open at 115200 baud. It'll re-print "Connected! IP: x.x.x.x".</li>
+  <li><strong>Router admin panel:</strong> log into your router (typically <code>192.168.1.1</code> or <code>192.168.0.1</code> in a browser), find "attached devices" or "DHCP clients," look for an entry named <code>espressif</code> or matching your ESP32's MAC address.</li>
+  <li><strong>Network scan:</strong> on Windows, run <code>arp -a</code> at a command prompt. On Mac/Linux, <code>arp -a</code> or <code>nmap -sn 192.168.1.0/24</code>. The ESP32's MAC starts with vendor prefix <code>24:6F:28</code>, <code>7C:9E:BD</code>, or similar Espressif range.</li>
+</ol>
+<p><strong>Tip:</strong> if your router supports it, assign a <strong>static DHCP lease</strong> for the ESP32's MAC address so it always gets the same IP. Saves you from re-editing <code>BATTERY_IP</code> every time your router reboots.</p>
+</div></details>
+
 <!-- ============ PHASE 5: PYTHON BACKEND ============ -->
 <div class="phase-header"><span class="phase-num">5</span><span class="phase-title">Python Backend Integration</span><span class="phase-time">1 hour</span></div>
 
@@ -1631,6 +1719,51 @@ Adafruit_NeoPixel strip(NUM_LEDS, LED_PIN, NEO_GRB + NEO_KHZ800);
   <li><code>aw-client</code> &mdash; queries ActivityWatch for app/website usage data</li>
   <li><code>pyserial</code> &mdash; optional fallback for sending charge over USB if WiFi fails</li>
 </ul>
+
+<details class="build-help"><summary>Python install on Windows/Mac (if "pip" isn't recognized)</summary><div class="help-body">
+<p><strong>Windows:</strong></p>
+<ol>
+  <li>Install Python 3.11+ from <a href="https://www.python.org/downloads/" target="_blank">python.org/downloads</a>. <strong>Check "Add Python to PATH"</strong> on the first installer screen &mdash; this is the #1 fix for "pip is not recognized."</li>
+  <li>Restart your terminal/PowerShell after install.</li>
+  <li>Verify: <code>python --version</code> and <code>pip --version</code>.</li>
+  <li>If you had Python installed before without PATH, run <code>py -m pip install ...</code> as a fallback.</li>
+</ol>
+<p><strong>Mac:</strong></p>
+<ol>
+  <li>The system Python on macOS is too old. Install a modern version with <a href="https://brew.sh/" target="_blank">Homebrew</a>: <code>brew install python@3.11</code>.</li>
+  <li>Use <code>python3</code> and <code>pip3</code> (not <code>python</code>/<code>pip</code>, which point to system Python).</li>
+  <li>Verify: <code>python3 --version</code>.</li>
+</ol>
+<p><strong>Virtual env (recommended):</strong> isolates Psych_Battery deps from other Python projects.</p>
+<pre class="code-block">python -m venv psychbat-env
+<span class="cmt"># Windows</span>
+psychbat-env\Scripts\activate
+<span class="cmt"># Mac/Linux</span>
+source psychbat-env/bin/activate
+pip install requests aw-client pyserial</pre>
+</div></details>
+
+<details class="build-help"><summary>Install ActivityWatch + browser extension (the data source)</summary><div class="help-body">
+<p>ActivityWatch is an open-source, local-only app that tracks which windows/websites you're using. All data stays on your laptop &mdash; nothing is uploaded anywhere. Psych_Battery reads from it via <code>aw-client</code>.</p>
+<p><strong>1. Install the ActivityWatch app:</strong></p>
+<ul>
+  <li>Download from <a href="https://activitywatch.net/" target="_blank">activitywatch.net</a> (Win/Mac/Linux installers).</li>
+  <li>Run the installer. Launch ActivityWatch &mdash; the tray icon / menu bar item should show a green dot.</li>
+  <li>Open <code>http://localhost:5600</code> in a browser to see the dashboard. You should see <code>aw-watcher-window</code> and <code>aw-watcher-afk</code> already collecting data.</li>
+</ul>
+<p><strong>2. Install the browser extension (for web-domain tracking):</strong></p>
+<ul>
+  <li>Chrome/Edge: <a href="https://chrome.google.com/webstore/detail/activitywatch-web-watcher/nglaklhklhcoonedhgnpgddginnjdadi" target="_blank">aw-watcher-web on Chrome Web Store</a></li>
+  <li>Firefox: <a href="https://addons.mozilla.org/en-US/firefox/addon/aw-watcher-web/" target="_blank">aw-watcher-web on AMO</a></li>
+  <li>After install, visit any site and refresh the ActivityWatch dashboard. A <code>aw-watcher-web</code> bucket should appear.</li>
+</ul>
+<p><strong>3. Verify Python can read it:</strong></p>
+<pre class="code-block">python -c "from aw_client import ActivityWatchClient; c = ActivityWatchClient('test'); print(c.get_buckets().keys())"</pre>
+<p>You should see a list including <code>aw-watcher-window_*</code>, <code>aw-watcher-afk_*</code>, and (if the extension is active) <code>aw-watcher-web-chrome</code> or similar.</p>
+<p><strong>Privacy note:</strong> ActivityWatch has no cloud, no telemetry, no network calls beyond localhost. All data is stored in a local SQLite file (<code>~/.local/share/activitywatch/</code> on Linux, similar paths on Win/Mac).</p>
+</div></details>
+
+<div class="callout"><div class="label">Minimum test without the full Python backend</div><p>Before wiring in ActivityWatch, verify the LED half works end-to-end with a one-liner. After saving <code>charge_sender.py</code> (next section): <code>python charge_sender.py 42</code> should hue-shift the LEDs within a second. If that works, the ESP32 + firmware + WiFi are all good &mdash; any later problems are on the Python side.</p></div>
 
 <h3>5.2 The Charge Sender Module</h3>
 <p>This is the same <code>charge_sender.py</code> used by the E-Ink build &mdash; the ESP32-side HTTP contract is identical (<code>POST /charge</code> with <code>{"level": 0-100}</code>), so the Python interface doesn't change. Save as <code>charge_sender.py</code>:</p>
@@ -1823,6 +1956,53 @@ RECHARGE_IDLE_PER_MIN = <span class="num">0.4</span>
   <li>Add a slot on the back for the USB cable exit. Add internal standoffs or a cradle to hold the ESP32 behind the LED module.</li>
   <li>Leave a 3mm internal ledge where the diffuser will rest.</li>
 </ul>
+
+<details class="build-help"><summary>Skip CAD: paste-ready OpenSCAD enclosure (exports to STL)</summary><div class="help-body">
+<p>If you don't want to learn Fusion/Onshape, paste this into the free <a href="https://openscad.org/cheatsheet/" target="_blank">OpenSCAD desktop app</a> or the <a href="https://ochafik.com/openscad2/" target="_blank">web-based viewer</a>, adjust the constants at top, then <strong>File &rarr; Export &rarr; Export as STL</strong> and slice in Cura / PrusaSlicer.</p>
+<span class="code-label">psych_battery_shell.scad &mdash; parametric battery enclosure</span>
+<pre class="code-block"><span class="cmt">// Psych_Battery LED enclosure shell
+// Cylinder with viewing window, +terminal bump, and back cable slot.
+// Export as STL, then slice at 0.2mm layer / 20% infill / black PLA.</span>
+
+$fn = <span class="num">80</span>;         <span class="cmt">// curve smoothness (higher = slower, prettier)</span>
+
+<span class="cmt">// ===== parameters - tweak these =====</span>
+OD       = <span class="num">70</span>;     <span class="cmt">// outer diameter (mm)</span>
+H        = <span class="num">110</span>;    <span class="cmt">// shell height (mm, excl. terminal)</span>
+wall     = <span class="num">2.4</span>;    <span class="cmt">// wall thickness</span>
+window_d = <span class="num">50</span>;     <span class="cmt">// viewing window diameter</span>
+term_d   = <span class="num">14</span>;     <span class="cmt">// + terminal bump diameter</span>
+term_h   = <span class="num">6</span>;      <span class="cmt">// + terminal bump height</span>
+cable_w  = <span class="num">12</span>;     <span class="cmt">// back cable slot width</span>
+cable_h  = <span class="num">5</span>;      <span class="cmt">// back cable slot height</span>
+ledge_z  = <span class="num">30</span>;     <span class="cmt">// diffuser ledge height from bottom</span>
+
+module battery_shell() {
+  difference() {
+    union() {
+      cylinder(d=OD, h=H);
+      translate([<span class="num">0</span>,<span class="num">0</span>,H]) cylinder(d=term_d, h=term_h);  <span class="cmt">// + terminal</span>
+    }
+    <span class="cmt">// hollow interior</span>
+    translate([<span class="num">0</span>,<span class="num">0</span>,wall]) cylinder(d=OD-<span class="num">2</span>*wall, h=H);
+    <span class="cmt">// viewing window (front face)</span>
+    translate([<span class="num">0</span>, OD/<span class="num">2</span>-wall-<span class="num">1</span>, H/<span class="num">2</span>])
+      rotate([<span class="num">90</span>,<span class="num">0</span>,<span class="num">0</span>]) cylinder(d=window_d, h=wall+<span class="num">2</span>);
+    <span class="cmt">// back cable slot</span>
+    translate([-cable_w/<span class="num">2</span>, -OD/<span class="num">2</span>-<span class="num">1</span>, wall+<span class="num">2</span>])
+      cube([cable_w, <span class="num">4</span>, cable_h]);
+  }
+  <span class="cmt">// internal diffuser ledge</span>
+  translate([<span class="num">0</span>,<span class="num">0</span>,ledge_z])
+    difference() {
+      cylinder(d=OD-<span class="num">2</span>*wall, h=<span class="num">2</span>);
+      translate([<span class="num">0</span>,<span class="num">0</span>,-<span class="num">1</span>]) cylinder(d=OD-<span class="num">2</span>*wall-<span class="num">6</span>, h=<span class="num">5</span>);
+    }
+}
+
+battery_shell();</pre>
+<p>Slicer settings that work: 0.2mm layer, 20% gyroid infill, 3 perimeters, no supports needed if the window cutout is oriented downward during printing (lay the cylinder on its side).</p>
+</div></details>
 
 <div class="slide-fig"><img src="/figures/battery/led_diffusion.png" alt="LED diffusion" onclick="openLightbox(this)"><div class="caption">Diffusion distance matters: individual LEDs are visible up close, but the 30-50mm air gap lets the light blend into a single smooth glow behind the frosted acrylic.</div></div>
 
@@ -2052,6 +2232,15 @@ RECHARGE_IDLE_PER_MIN = <span class="num">0.4</span>
 
 <div class="callout"><div class="label">Why this sample code is critical</div><p>The GDEY0579F52 uses <strong>two IST7158 driver ICs</strong> internally (Master + Slave). Each controls half the screen. The register addressing uses offsets (Master at 0x00-0x79, Slave at Master + 0x80). No generic e-paper library understands this &mdash; they'll only drive half the screen. Good Display's sample has the correct init sequence and register map baked in.</p></div>
 
+<details class="build-help"><summary>Which of the two download pages should I use?</summary><div class="help-body">
+<p>There are two URLs floating around and they are not interchangeable:</p>
+<ul>
+  <li><strong><a href="https://www.good-display.com/companyfile/1832.html" target="_blank">good-display.com/companyfile/1832.html</a></strong> &mdash; the generic GDEY0579F52 demo. Works if you are wiring a bare ESP32 to the DESPI-C579 on a breadboard with your own pin choices.</li>
+  <li><strong><a href="https://buyepaper.com/products/579-inch-e-paper-display-development-kit-esp32-epaper-board-esp32-lc579" target="_blank">buyepaper.com product page &rarr; Resources</a></strong> &mdash; the ESP32-L(C579) kit demo. Pin mapping in <code>DEV_Config.h</code> already matches the hardwired GPIOs on the ESP32-L motherboard. <strong>This is the one you want</strong> &mdash; you own the kit.</li>
+</ul>
+<p>If the companyfile download is the only one you can find, you can still use it, but you'll need to edit <code>DEV_Config.h</code> to match the ESP32-L pins shown in Phase 3.1 below (BUSY=25, RST=26, DC=27, CS=15, CLK=13, MOSI=14).</p>
+</div></details>
+
 <!-- ============ PHASE 2: WIRING ============ -->
 <div class="phase-header"><span class="phase-num">2</span><span class="phase-title">Hardware Wiring (Step by Step)</span><span class="phase-time">30 min</span></div>
 
@@ -2077,6 +2266,9 @@ RECHARGE_IDLE_PER_MIN = <span class="num">0.4</span>
 
 <h3>2.3 Connect the Display Ribbon Cable to the DESPI-C579</h3>
 <p>This is the most delicate step in the entire build. The ribbon cable is fragile &mdash; handle it gently.</p>
+
+<div class="slide-fig"><img src="/figures/battery/eink_ribbon.svg" alt="ZIF ribbon cable insertion: lift tab, insert with contacts DOWN, push tab down" onclick="openLightbox(this)"><div class="caption">Side-view of the DESPI-C579 ZIF connector. The shiny gold contacts on the ribbon MUST face down (toward the PCB). Getting this backwards is the #1 first-build failure.</div></div>
+
 <ul class="findings">
   <li><strong>Step 1:</strong> Find the ZIF connector on the DESPI-C579. It's the wide black connector with a small flip-up tab on one edge.</li>
   <li><strong>Step 2:</strong> Gently flip the black tab <strong>up</strong> (perpendicular to the board) using a fingernail or small flathead screwdriver. It should move about 2mm. Don't force it &mdash; if it resists, you're pushing the wrong part.</li>
@@ -2158,6 +2350,19 @@ These are hardwired on the ESP32-L motherboard's PCB. Don't change them in the s
 <br><br>
 <strong>4. Wrong sample code</strong> &mdash; double-check you downloaded the ESP32-L(C579) version, not the generic GDEY0579F52 or the 2.9" sample.</p></div>
 
+<details class="build-help"><summary>What a successful first upload actually looks like</summary><div class="help-body">
+<p>Upload completes, then for roughly 20&ndash;30 seconds you'll see:</p>
+<ol>
+  <li>Display goes fully <strong>black</strong> (~2 sec).</li>
+  <li>Flashes to <strong>white</strong> (~2 sec).</li>
+  <li>A couple of repeat black/white flashes &mdash; this is the controller "clearing" the panel. Normal.</li>
+  <li>Color bars or a Good Display logo / demo image appear in <strong>red / yellow / black / white</strong>.</li>
+  <li>Image stays on screen even after you unplug USB. That's the e-ink persistence &mdash; working correctly.</li>
+</ol>
+<p>If steps 1&ndash;3 happen but the final image is blurry, ghosted, or only half the panel shows content, the ribbon is likely seated imperfectly &mdash; re-seat it.</p>
+<p>If the display never reacts at all, the most likely cause is wrong sample code (generic vs ESP32-L variant). See the dropdown at Phase 1.5.</p>
+</div></details>
+
 <!-- ============ PHASE 4: COMPLETE FIRMWARE ============ -->
 <div class="phase-header"><span class="phase-num">4</span><span class="phase-title">The Complete Charge Bar Firmware</span><span class="phase-time">2 hours</span></div>
 
@@ -2176,6 +2381,34 @@ These are hardwired on the ESP32-L motherboard's PCB. Don't change them in the s
 
 <h3>4.2 The Main Arduino Sketch</h3>
 <p>Create a new sketch (<strong>File &rarr; New Sketch</strong>) and paste this code. Save as <code>psych_battery_eink.ino</code>. You'll also need to copy the Good Display support files (<code>EPD_5in79_G.h</code>, <code>EPD_5in79_G.cpp</code>, <code>DEV_Config.h</code>, <code>DEV_Config.cpp</code>) into the sketch folder.</p>
+
+<details class="build-help"><summary>What goes in the "sketch folder"</summary><div class="help-body">
+<p>When you save the sketch as <code>psych_battery_eink.ino</code>, Arduino creates a folder by the same name. Drop the support files in next to the <code>.ino</code>:</p>
+<pre class="code-block">psych_battery_eink/
+├── psych_battery_eink.ino     &larr; your main sketch
+├── EPD_5in79_G.h
+├── EPD_5in79_G.cpp
+├── DEV_Config.h
+├── DEV_Config.cpp
+└── ImageData.h                &larr; optional, only if you display bitmaps</pre>
+<p>Use <strong>Sketch &rarr; Show Sketch Folder</strong> to open the folder in Explorer/Finder; then copy the files in from the Good Display ZIP. Restart Arduino IDE after adding them so the tabs refresh.</p>
+</div></details>
+
+<details class="build-help"><summary>About PSRAM and the framebuffer</summary><div class="help-body">
+<p>The panel is 792 &times; 272 = 215,424 pixels. At 2 bits per pixel (4 colors), each logical buffer is ~54 KB; the driver uses two (Master + Slave halves). That fits comfortably in regular SRAM, so <strong>you don't need PSRAM</strong> for this display &mdash; the sample code uses <code>malloc()</code>, not <code>ps_malloc()</code>.</p>
+<p>If you later swap in a larger panel (e.g. 7.5" or the 13.3" tri-color), you will start running out of SRAM. At that point: <strong>Tools &rarr; PSRAM &rarr; Enabled</strong> and switch the framebuffer allocation to <code>ps_malloc()</code>. The ESP32-L doesn't have PSRAM on the motherboard, so for that scale you'd step up to an ESP32-S3 board instead.</p>
+</div></details>
+
+<details class="build-help"><summary>Fast refresh vs full refresh &mdash; when and why</summary><div class="help-body">
+<p>The GDEY0579F52 supports two refresh modes:</p>
+<ul>
+  <li><strong>Fast refresh (~12 s)</strong> &mdash; only toggles pixels that changed. Lower power, faster, but leaves faint "ghosts" of the previous image.</li>
+  <li><strong>Full refresh (~20 s)</strong> &mdash; drives every pixel through a full black-white-red-yellow waveform cycle. No ghosting, but visually jarring and ~1.7&times; the energy.</li>
+</ul>
+<p>The firmware below uses fast refresh on every <code>/charge</code> update and triggers a full refresh every 10 updates (counter resets on reboot). If you notice ghosting building up visibly, lower that counter to 5; if you want to save power and don't mind ghosts, raise it to 20 or more.</p>
+<p>E-ink doesn't wear by pixel like OLED, but each refresh cycle is a small stress on the particle layer. Don't call <code>refresh()</code> in a tight loop &mdash; debounce to at least 30 s between pushes.</p>
+</div></details>
+
 
 <span class="code-label">psych_battery_eink.ino &mdash; main firmware</span>
 <pre class="code-block"><span class="cmt">/*
@@ -2436,6 +2669,50 @@ These are hardwired on the ESP32-L motherboard's PCB. Don't change them in the s
   <li><code>aw-client</code> &mdash; queries ActivityWatch for app/website usage data</li>
   <li><code>pyserial</code> &mdash; optional fallback for sending charge over USB if WiFi fails</li>
 </ul>
+
+<details class="build-help"><summary>Python install on Windows / macOS (if you don't have it yet)</summary><div class="help-body">
+<p><strong>Windows:</strong></p>
+<ul>
+  <li>Download the installer from <a href="https://www.python.org/downloads/" target="_blank">python.org/downloads</a> (3.11 or 3.12 are safest for <code>aw-client</code>).</li>
+  <li>On the first install screen, check <strong>"Add python.exe to PATH"</strong>. Missing this is the #1 "pip not recognized" cause.</li>
+  <li>If <code>pip</code> still isn't found, use <code>py -m pip install requests aw-client pyserial</code> instead &mdash; the <code>py</code> launcher ships with the installer.</li>
+</ul>
+<p><strong>macOS:</strong></p>
+<ul>
+  <li>Don't use the system Python (<code>/usr/bin/python3</code>) &mdash; it's locked down on Sequoia. Install via Homebrew: <code>brew install python@3.11</code>.</li>
+  <li>Use <code>python3</code> and <code>pip3</code> explicitly (not <code>python</code>/<code>pip</code>).</li>
+</ul>
+<p><strong>Recommended: use a virtualenv</strong> so these libraries don't pollute the system install.</p>
+<pre class="code-block">python -m venv .venv
+# Windows
+.venv\Scripts\activate
+# macOS/Linux
+source .venv/bin/activate
+pip install requests aw-client pyserial</pre>
+</div></details>
+
+<details class="build-help"><summary>Install ActivityWatch + the browser extension</summary><div class="help-body">
+<p><code>aw-client</code> only queries ActivityWatch &mdash; it doesn't collect anything on its own. You need the ActivityWatch daemon running on your laptop.</p>
+<ol>
+  <li>Download from <a href="https://activitywatch.net/downloads/" target="_blank">activitywatch.net/downloads</a> and install. It starts a tray icon and a local server on <strong>localhost:5600</strong>.</li>
+  <li>Install the browser watcher so AW sees websites (it only sees app windows without it):
+    <ul>
+      <li><a href="https://chromewebstore.google.com/detail/activitywatch-web-watcher/nglaklhklhcoonedhgnpgddginnjdadi" target="_blank">Chrome extension</a></li>
+      <li><a href="https://addons.mozilla.org/en-US/firefox/addon/activitywatch-web-watcher/" target="_blank">Firefox add-on</a></li>
+    </ul>
+  </li>
+  <li>Verify the client can connect:
+<pre class="code-block">python -c "from aw_client import ActivityWatchClient; c = ActivityWatchClient('test'); print(c.get_buckets())"</pre>
+  You should see a dict with bucket names like <code>aw-watcher-window_&lt;host&gt;</code> and <code>aw-watcher-afk_&lt;host&gt;</code>. Empty dict = daemon not running.</li>
+</ol>
+<p><strong>Privacy note:</strong> AW is local-only by default. Nothing leaves your laptop unless you configure sync. If you're uncomfortable with keystroke-adjacent data logging, you can run AW only during work sessions and stop the daemon when done.</p>
+</div></details>
+
+<div class="callout"><div class="label">Minimum test without the full Python backend</div><p>You don't need ActivityWatch to verify the battery is reachable. Once the firmware is flashed and you have its IP, just:
+<br><br>
+<code>python charge_sender.py 42</code>
+<br><br>
+(or simply <code>curl "http://&lt;BATTERY_IP&gt;/charge?level=42"</code> from any shell). If the display redraws, the end-to-end pipe works and you can bolt on the energy-score calculator later.</p></div>
 
 <h3>5.2 The Charge Sender Module</h3>
 <p>Save this as <code>charge_sender.py</code> &mdash; it's the interface between your energy-score calculator and the physical battery:</p>
