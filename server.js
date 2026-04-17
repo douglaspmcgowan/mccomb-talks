@@ -130,6 +130,18 @@ pre.code-block .num { color:#b5cea8; }
 pre.code-block .fn { color:#dcdcaa; }
 pre.code-block .ty { color:#4ec9b0; }
 .code-label { display:inline-block; font-size:0.7rem; font-weight:600; padding:0.2rem 0.6rem; border-radius:4px 4px 0 0; background:#2d2d2d; color:#d4d4d4; margin-bottom:-1px; border:1px solid var(--border); border-bottom:none; font-family:'SF Mono','Monaco','Consolas',monospace; }
+details.section-fold { margin:1rem 0 0.75rem; border-top:1px solid var(--border); }
+details.section-fold > summary { padding:0.75rem 0; font-family:'Playfair Display',serif; font-size:1.15rem; font-weight:600; color:var(--text); cursor:pointer; list-style:none; display:flex; align-items:center; gap:0.6rem; }
+details.section-fold > summary::before { content:'\\25B6'; font-size:0.7rem; color:var(--accent); transition:transform 0.2s; flex-shrink:0; }
+details.section-fold[open] > summary::before { transform:rotate(90deg); }
+details.section-fold > summary:hover { color:var(--accent); }
+details.section-fold > .section-body { padding:0 0 0.75rem 1.4rem; }
+details.code-fold { margin:1rem 0; border:1px solid var(--border); border-radius:var(--radius); overflow:hidden; }
+details.code-fold > summary { padding:0.5rem 0.85rem; font-size:0.78rem; font-weight:600; background:#2d2d2d; color:#d4d4d4; cursor:pointer; list-style:none; display:flex; align-items:center; gap:0.5rem; font-family:'SF Mono','Monaco','Consolas',monospace; }
+details.code-fold > summary::before { content:'\\25B6'; font-size:0.65rem; color:#6a9955; transition:transform 0.2s; flex-shrink:0; }
+details.code-fold[open] > summary::before { transform:rotate(90deg); }
+details.code-fold > summary .code-lines { margin-left:auto; color:#858585; font-weight:400; font-size:0.72rem; }
+details.code-fold > pre.code-block { margin:0; border:none; border-radius:0; }
 .phase-header { display:flex; align-items:center; gap:0.75rem; margin:2.5rem 0 1rem; padding:0.75rem 1rem; background:linear-gradient(90deg,var(--accent-light),transparent); border-left:4px solid var(--accent); border-radius:0 var(--radius) var(--radius) 0; }
 .phase-header .phase-num { font-family:'Playfair Display',serif; font-size:1.75rem; font-weight:700; color:var(--accent); line-height:1; }
 .phase-header .phase-title { font-family:'Playfair Display',serif; font-size:1.35rem; font-weight:600; color:var(--text); }
@@ -148,6 +160,10 @@ function openLightbox(img){document.getElementById('lightboxImg').src=img.src;do
 function closeLightbox(){document.getElementById('lightbox').classList.remove('open');document.body.style.overflow=''}
 document.addEventListener('keydown',function(e){if(e.key==='Escape')closeLightbox()});
 window.addEventListener('scroll',function(){document.getElementById('scrollTop').classList.toggle('visible',window.scrollY>400)});
+function openHashTarget(){if(!location.hash)return;var el=document.getElementById(location.hash.slice(1));if(!el)return;var p=el;while(p){if(p.tagName==='DETAILS')p.open=true;p=p.parentElement}setTimeout(function(){el.scrollIntoView({behavior:'smooth',block:'start'})},30)}
+window.addEventListener('hashchange',openHashTarget);
+window.addEventListener('load',openHashTarget);
+document.addEventListener('click',function(e){var a=e.target.closest('a[href^="#"]');if(a){setTimeout(openHashTarget,0)}});
 `;
 }
 
@@ -1144,7 +1160,8 @@ return pageWrapper({ title: 'Psych_Battery: Systems Map & Prototyping', icon: '\
 
 <div class="slide-fig"><img src="/figures/battery/led_assembly.png" alt="LED battery prototype" onclick="openLightbox(this)"><div class="caption">The finished prototype: a cylindrical battery-shaped enclosure with WS2812B LEDs arranged inside, diffused through sanded acrylic. Color ramps from red (depleted) through amber to green (full charge). Soft breathing pulse indicates active state.</div></div>
 
-<h3>Table of Contents</h3>
+<details class="section-fold"><summary>Table of Contents</summary>
+<div class="section-body">
 <div class="toc"><ul>
   <li><a href="#led-why">Why LED + Frosted Glass for Psych_Battery</a></li>
   <li><a href="#led-bom">Phase 0: Supplies &amp; Bill of Materials</a></li>
@@ -1158,8 +1175,10 @@ return pageWrapper({ title: 'Psych_Battery: Systems Map & Prototyping', icon: '\
   <li><a href="#led-compare">Comparison: LED vs E-Ink</a></li>
   <li><a href="#led-troubleshooting">Troubleshooting Guide</a></li>
 </ul></div>
-
-<h3 id="led-why">Why LED + Frosted Glass for Psych_Battery?</h3>
+</div>
+</details>
+<details class="section-fold" id="led-why"><summary>Why LED + Frosted Glass for Psych_Battery?</summary>
+<div class="section-body">
 <ul class="findings">
   <li><strong>Instant updates.</strong> Brightness and color change in milliseconds &mdash; useful for live feedback or breathing animations that respond to keystrokes, Slack pings, or AFK states.</li>
   <li><strong>Ambient, glanceable.</strong> A soft diffused glow sits in peripheral vision without demanding attention. The color shift is the signal; precise numbers aren't needed.</li>
@@ -1169,21 +1188,27 @@ return pageWrapper({ title: 'Psych_Battery: Systems Map & Prototyping', icon: '\
 </ul>
 
 <div class="callout"><div class="label">Known trade-off: blue light &amp; always-on power</div><p>LEDs emit (including a small blue-light component) and draw 200-500 mW continuously. If your design constraint is "no blue light on the desk" or "always-on without power," choose the e-ink build instead. The LED build is best when the battery will be in a well-lit workspace during active hours and unplugged after work.</p></div>
-
-<h3>Architecture</h3>
+</div>
+</details>
+<details class="section-fold"><summary>Architecture</summary>
+<div class="section-body">
 <p><code>Python Backend &rarr; (HTTP POST or Serial) &rarr; ESP32 &rarr; 74AHCT125 level shifter &rarr; WS2812B LEDs &rarr; frosted acrylic diffuser &rarr; battery enclosure</code></p>
-
-<h3>Full Circuit Blueprints</h3>
+</div>
+</details>
+<details class="section-fold"><summary>Full Circuit Blueprints</summary>
+<div class="section-body">
 <div class="slide-fig"><img src="/figures/battery/led_blueprint_full.png" alt="Full 4-row LED blueprint" onclick="openLightbox(this)"><div class="caption">Complete blueprint: ESP32 &rarr; 74AHCT125 level shifter &rarr; 330&ohm; resistor &rarr; 4 rows of WS2812B LEDs in serpentine layout. 1000&micro;F capacitor on power rails. 5V 4A power supply. Title block: "PSYCH_BATTERY LED CIRCUIT &mdash; 4 ROW SERPENTINE LAYOUT".</div></div>
 
 <div class="slide-fig"><img src="/figures/battery/led_matrix_blueprint.png" alt="8x8 matrix blueprint" onclick="openLightbox(this)"><div class="caption">Alternative: 8&times;8 NeoPixel matrix version. Same ESP32 + level shifter circuit, but the matrix is a single rigid PCB with 64 LEDs. Frosted acrylic panel shown at 50mm distance for diffusion.</div></div>
 
 <div class="slide-fig"><img src="/figures/battery/led_wiring.png" alt="LED wiring closeup" onclick="openLightbox(this)"><div class="caption">Simplified wiring closeup: ESP32 GPIO 16 &rarr; 330&ohm; resistor &rarr; 74AHCT125 &rarr; WS2812B data input. 1000&micro;F capacitor across the +5V and GND rails, as close to the first LED as possible.</div></div>
-
+</div>
+</details>
 <!-- ============ PHASE 0: SUPPLIES ============ -->
 <div class="phase-header"><span class="phase-num">0</span><span class="phase-title">Supplies &amp; Bill of Materials</span><span class="phase-time">30 min (shopping + inventory)</span></div>
 
-<h3 id="led-bom">0.1 Electronics BOM (~$55-80 total)</h3>
+<details class="section-fold" id="led-bom"><summary>0.1 Electronics BOM (~$55-80 total)</summary>
+<div class="section-body">
 <p>These are the electronic components. If you already have an ESP32 from another project, you can skip the dev board line.</p>
 <table class="result-table">
 <tr><th>Component</th><th>Product</th><th>Price</th><th>Source</th></tr>
@@ -1201,8 +1226,10 @@ return pageWrapper({ title: 'Psych_Battery: Systems Map & Prototyping', icon: '\
 </table>
 
 <div class="callout"><div class="label">Recommended LED pick: Ring + Jewel combo</div><p>For a first prototype, the <strong>24-LED NeoPixel Ring + 7-LED Jewel combo ($23)</strong> is the easiest path. The ring's 65.5mm diameter fits a cylindrical battery enclosure perfectly, the circular shape matches the form, and it produces the smoothest diffused glow. Just daisy-chain Jewel DOUT to Ring DIN &mdash; no custom soldering between segments. See the <a href="#led-matrix">LED Matrix Options appendix</a> for alternatives.</p></div>
-
-<h3>0.2 Enclosure &amp; Diffuser Supplies (~$15-30)</h3>
+</div>
+</details>
+<details class="section-fold"><summary>0.2 Enclosure &amp; Diffuser Supplies (~$15-30)</summary>
+<div class="section-body">
 <p>Physical materials for the enclosure and light diffusion. Many are free at UC Berkeley makerspaces &mdash; bring this list to make sure you don't get stuck mid-build.</p>
 
 <table class="result-table">
@@ -1217,8 +1244,10 @@ return pageWrapper({ title: 'Psych_Battery: Systems Map & Prototyping', icon: '\
 </table>
 
 <p><strong>Minimum additional cost: $10-$25</strong> depending on how much you source from Jacobs vs buy yourself. The frosted acrylic is the one item that's hard to source for free.</p>
-
-<h3>0.3 Tools You'll Use (all free at UC Berkeley makerspaces)</h3>
+</div>
+</details>
+<details class="section-fold"><summary>0.3 Tools You'll Use (all free at UC Berkeley makerspaces)</summary>
+<div class="section-body">
 <table class="result-table">
 <tr><th>Tool</th><th>Purpose</th><th>Where to Find It</th></tr>
 <tr><td><strong>Soldering iron + solder</strong></td><td>Connecting LED segments, attaching wires to the strip/ring</td><td><a href="https://jacobsinstitute.berkeley.edu/making-at-jacobs/" target="_blank">Jacobs Hall</a>, <a href="https://supernode.berkeley.edu/" target="_blank">Supernode</a> (24/7, Cory Hall), <a href="https://invent.citris-uc.org/" target="_blank">CITRIS Invention Lab</a></td></tr>
@@ -1231,8 +1260,10 @@ return pageWrapper({ title: 'Psych_Battery: Systems Map & Prototyping', icon: '\
 </table>
 
 <div class="callout"><div class="label">Maker Pass required</div><p>To use Jacobs Hall, CITRIS Invention Lab, or most Berkeley makerspaces, you need a Maker Pass. Sign up at <a href="https://jacobsinstitute.berkeley.edu/our-space/" target="_blank">jacobsinstitute.berkeley.edu</a> &mdash; free for UC Berkeley students. Supernode is free and 24/7 with no pass required.</p></div>
-
-<h3>0.4 Final Shopping List (if you want to cover everything)</h3>
+</div>
+</details>
+<details class="section-fold"><summary>0.4 Final Shopping List (if you want to cover everything)</summary>
+<div class="section-body">
 <p>If you want to buy everything yourself instead of relying on makerspace supplies, total cost is roughly:</p>
 <ul class="findings">
   <li>Electronics BOM (0.1): <strong>~$79</strong> with Ring+Jewel combo</li>
@@ -1256,11 +1287,13 @@ return pageWrapper({ title: 'Psych_Battery: Systems Map & Prototyping', icon: '\
 </ul>
 <p>Ordering Ring and Jewel from Adafruit in the same order saves shipping. Everything else is Prime-eligible on Amazon.</p>
 </div></details>
-
+</div>
+</details>
 <!-- ============ PHASE 1: SOFTWARE ============ -->
 <div class="phase-header"><span class="phase-num">1</span><span class="phase-title">Software Setup (Arduino IDE + Libraries)</span><span class="phase-time">45 min</span></div>
 
-<h3 id="led-software">1.1 Install Arduino IDE 2.x</h3>
+<details class="section-fold" id="led-software"><summary>1.1 Install Arduino IDE 2.x</summary>
+<div class="section-body">
 <p>Arduino IDE is the free program where you'll write code (called "sketches") and upload it to the ESP32 via USB. It handles compiling, library management, and uploading.</p>
 <ul class="findings">
   <li>Go to <a href="https://www.arduino.cc/en/software" target="_blank">arduino.cc/en/software</a></li>
@@ -1268,8 +1301,10 @@ return pageWrapper({ title: 'Psych_Battery: Systems Map & Prototyping', icon: '\
   <li>Run the installer. Accept all defaults. On Mac, drag it to Applications.</li>
   <li>Launch Arduino IDE. You'll see an empty sketch with <code>setup()</code> (runs once at power-on) and <code>loop()</code> (runs repeatedly forever). Your charge-level code goes in <code>loop()</code>.</li>
 </ul>
-
-<h3>1.2 Add ESP32 Board Support</h3>
+</div>
+</details>
+<details class="section-fold"><summary>1.2 Add ESP32 Board Support</summary>
+<div class="section-body">
 <p>Arduino IDE doesn't know about ESP32 by default. You have to add Espressif's board package URL.</p>
 <ul class="findings">
   <li>In Arduino IDE, go to <strong>File &rarr; Preferences</strong> (Windows/Linux) or <strong>Arduino IDE &rarr; Settings</strong> (macOS)</li>
@@ -1281,16 +1316,20 @@ return pageWrapper({ title: 'Psych_Battery: Systems Map & Prototyping', icon: '\
   <li>Install <strong>"esp32 by Espressif Systems"</strong> (version 3.x or higher). This takes ~3-5 minutes.</li>
   <li>After installation: <strong>Tools &rarr; Board &rarr; ESP32 Arduino &rarr; ESP32 Dev Module</strong></li>
 </ul>
-
-<h3>1.3 Install USB Driver (Windows/Mac only)</h3>
+</div>
+</details>
+<details class="section-fold"><summary>1.3 Install USB Driver (Windows/Mac only)</summary>
+<div class="section-body">
 <p>The ESP32 DevKit V1 uses a <strong>CP2102</strong> USB-to-serial chip. Most modern computers have the driver pre-installed, but if your ESP32 doesn't appear as a COM port, install it manually.</p>
 <ul class="findings">
   <li>Download the driver from <a href="https://www.silabs.com/developers/usb-to-uart-bridge-vcp-drivers" target="_blank">Silicon Labs CP2102 drivers</a></li>
   <li>Install, reboot if prompted</li>
   <li>Plug in your ESP32 via USB. Open Arduino IDE &rarr; <strong>Tools &rarr; Port</strong>. You should see a new port appear (COM3+ on Windows, /dev/cu.SLAB_USBtoUART on Mac, /dev/ttyUSB0 on Linux). Select it.</li>
 </ul>
-
-<h3>1.4 Install Required Arduino Libraries</h3>
+</div>
+</details>
+<details class="section-fold"><summary>1.4 Install Required Arduino Libraries</summary>
+<div class="section-body">
 <p>You need four libraries to drive the LEDs and run an HTTP server. Install via <strong>Sketch &rarr; Include Library &rarr; Manage Libraries</strong>:</p>
 <ul class="findings">
   <li><strong>Adafruit NeoPixel</strong> by Adafruit (latest version) &mdash; drives the WS2812B LEDs using bit-banged timing</li>
@@ -1317,6 +1356,7 @@ return pageWrapper({ title: 'Psych_Battery: Systems Map & Prototyping', icon: '\
 <details class="build-help"><summary>What "sketch folder" means &mdash; keeping .ino + .h files together</summary><div class="help-body">
 <p>An Arduino "sketch" is a folder, not just the <code>.ino</code> file. The IDE requires the folder name to match the <code>.ino</code> file's name (e.g. <code>psych_battery_led/psych_battery_led.ino</code>). Any support files (<code>.h</code>, <code>.cpp</code>) you want this sketch to use must sit in the <em>same folder</em>.</p>
 <p>On disk, your sketchbook looks like this:</p>
+<details class="code-fold"><summary>&lt;sketchbook&gt;/</summary>
 <pre class="code-block">&lt;sketchbook&gt;/
   psych_battery_led/
     psych_battery_led.ino    &larr; the main file (File &rarr; Open this)
@@ -1326,13 +1366,16 @@ return pageWrapper({ title: 'Psych_Battery: Systems Map & Prototyping', icon: '\
     Adafruit_NeoPixel/       &larr; libraries live one level up
     ArduinoJson/
     ESPAsyncWebServer/</pre>
+</details>
 <p>When Arduino opens your <code>.ino</code>, any <code>.h</code>/<code>.cpp</code> in the same folder will be compiled together automatically &mdash; no Makefile needed.</p>
 </div></details>
-
+</div>
+</details>
 <!-- ============ PHASE 2: WIRING ============ -->
 <div class="phase-header"><span class="phase-num">2</span><span class="phase-title">Hardware Wiring (Breadboard, Step-by-Step)</span><span class="phase-time">45 min</span></div>
 
-<h3 id="led-wiring">2.1 Understand the Components</h3>
+<details class="section-fold" id="led-wiring"><summary>2.1 Understand the Components</summary>
+<div class="section-body">
 <p>Unlike the e-ink kit (which is plug-and-play), the LED build uses a breadboard and discrete components. Here's what each piece does:</p>
 <ul class="findings">
   <li><strong>ESP32 DevKit V1:</strong> The "brain." Reads commands over WiFi or USB, runs the charge animation, sends data to the LEDs. Outputs 3.3V logic on its GPIO pins. Has WiFi and Bluetooth built in.</li>
@@ -1359,15 +1402,19 @@ return pageWrapper({ title: 'Psych_Battery: Systems Map & Prototyping', icon: '\
 </ul>
 <p>Safe alternatives if GPIO 16 is occupied: 17, 18, 19, 21, 22, 23, 25, 26, 27, 32, 33. Update <code>#define LED_PIN</code> in the firmware to match whichever you pick.</p>
 </div></details>
-
-<h3>2.2 Place the ESP32 on the Breadboard</h3>
+</div>
+</details>
+<details class="section-fold"><summary>2.2 Place the ESP32 on the Breadboard</summary>
+<div class="section-body">
 <ul class="findings">
   <li><strong>Step 1:</strong> Place the ESP32 dev board straddling the center channel of the breadboard so its pins line up with the numbered rows on both sides. The USB port should hang off one end.</li>
   <li><strong>Step 2:</strong> Run a jumper wire from the ESP32's <strong>GND pin</strong> to the breadboard's <strong>blue (negative) power rail</strong>. This is the common ground.</li>
   <li><strong>Step 3:</strong> Do NOT connect the ESP32's 5V or VIN pin to the power rail. The ESP32 gets its own power from USB. Only GND is shared.</li>
 </ul>
-
-<h3>2.3 Place the 74AHCT125 Level Shifter</h3>
+</div>
+</details>
+<details class="section-fold"><summary>2.3 Place the 74AHCT125 Level Shifter</summary>
+<div class="section-body">
 <p>The 74AHCT125 is a 14-pin DIP chip. Orient it with the notch (or dot) toward the ESP32.</p>
 <ul class="findings">
   <li><strong>Step 1:</strong> Straddle the 74AHCT125 across the center channel of the breadboard, far enough from the ESP32 to leave room for jumpers.</li>
@@ -1377,24 +1424,30 @@ return pageWrapper({ title: 'Psych_Battery: Systems Map & Prototyping', icon: '\
 </ul>
 
 <div class="callout"><div class="label">Pin numbering on DIP chips</div><p>Pin 1 is marked with a small dot or notch. Counting goes counterclockwise when viewed from above: pin 1 in the top-left, pin 7 in the bottom-left, pin 8 in the bottom-right, pin 14 in the top-right.</p></div>
-
-<h3>2.4 Wire the Data Signal Path</h3>
+</div>
+</details>
+<details class="section-fold"><summary>2.4 Wire the Data Signal Path</summary>
+<div class="section-body">
 <p>This is the whole point of the level shifter &mdash; to route the ESP32's data output through the chip and get a clean 5V signal out.</p>
 <ul class="findings">
   <li><strong>Step 1:</strong> Run a jumper from <strong>ESP32 GPIO 16</strong> to one end of a <strong>330&ohm; resistor</strong>.</li>
   <li><strong>Step 2:</strong> From the other end of the resistor, run a short jumper to <strong>74AHCT125 pin 2 (1A, input)</strong>.</li>
   <li><strong>Step 3:</strong> Run a jumper from <strong>74AHCT125 pin 3 (1Y, output)</strong> out to an empty row &mdash; this is where the LED module's data wire will connect.</li>
 </ul>
-
-<h3>2.5 Connect the 5V Power Supply</h3>
+</div>
+</details>
+<details class="section-fold"><summary>2.5 Connect the 5V Power Supply</summary>
+<div class="section-body">
 <ul class="findings">
   <li><strong>Step 1:</strong> Screw the 5V 4A power supply's plug into the barrel jack adapter's positive (+) and negative (-) terminals. Confirm polarity with a multimeter if unsure &mdash; the adapter should be labeled.</li>
   <li><strong>Step 2:</strong> Run a wire from the barrel jack adapter's <strong>(+)</strong> terminal to the breadboard's <strong>red (+5V) power rail</strong>.</li>
   <li><strong>Step 3:</strong> Run a wire from the adapter's <strong>(-)</strong> terminal to the breadboard's <strong>blue (GND) power rail</strong>.</li>
   <li><strong>Step 4:</strong> Do NOT plug the wall brick into the wall yet. Power-on only after the full circuit is verified.</li>
 </ul>
-
-<h3>2.6 Place the 1000&micro;F Capacitor</h3>
+</div>
+</details>
+<details class="section-fold"><summary>2.6 Place the 1000&micro;F Capacitor</summary>
+<div class="section-body">
 <p>Electrolytic capacitors are polarized &mdash; getting polarity wrong can make them pop.</p>
 <ul class="findings">
   <li><strong>Step 1:</strong> Identify the capacitor's <strong>negative leg</strong> &mdash; marked with a stripe and a minus sign on the can. The other leg (usually longer) is positive.</li>
@@ -1402,8 +1455,10 @@ return pageWrapper({ title: 'Psych_Battery: Systems Map & Prototyping', icon: '\
   <li><strong>Step 3:</strong> Connect the <strong>positive (long) leg</strong> to the red (+5V) rail.</li>
   <li><strong>Step 4:</strong> Connect the <strong>negative (striped) leg</strong> to the blue (GND) rail.</li>
 </ul>
-
-<h3>2.7 Connect the LED Module</h3>
+</div>
+</details>
+<details class="section-fold"><summary>2.7 Connect the LED Module</summary>
+<div class="section-body">
 <p>All WS2812B LED modules use the same 3-wire interface: VCC (5V), GND, DIN (data in). The wiring below works for the Ring+Jewel combo, 8&times;8 matrix, or cut LED strip &mdash; only the physical solder joints differ.</p>
 
 <h4>Ring + Jewel combo (recommended):</h4>
@@ -1423,8 +1478,10 @@ return pageWrapper({ title: 'Psych_Battery: Systems Map & Prototyping', icon: '\
 <ul class="findings">
   <li>Cut the strip at the marked cut lines to get 4 equal-length segments. Solder short jumper wires (VCC, GND, DATA) between the end of row 1 and the start of row 2, then row 2 to row 3, and row 3 to row 4. Arrange in a serpentine (zigzag) pattern. First row's DIN goes to the level shifter output; last row's DOUT is left unconnected. Set <code>NUM_LEDS = total LEDs across all rows</code>.</li>
 </ul>
-
-<h3>2.8 Final Wiring Check</h3>
+</div>
+</details>
+<details class="section-fold"><summary>2.8 Final Wiring Check</summary>
+<div class="section-body">
 <p>Before plugging anything in, verify:</p>
 <ul class="findings">
   <li>ESP32 GND is tied to the blue rail (common ground)</li>
@@ -1436,19 +1493,23 @@ return pageWrapper({ title: 'Psych_Battery: Systems Map & Prototyping', icon: '\
   <li>ESP32 USB cable plugged into your computer</li>
   <li>Wall brick NOT yet plugged in &mdash; do that only after Phase 3 upload</li>
 </ul>
-
+</div>
+</details>
 <!-- ============ PHASE 3: FIRST TEST ============ -->
 <div class="phase-header"><span class="phase-num">3</span><span class="phase-title">First Upload &amp; Smoke Test</span><span class="phase-time">15 min</span></div>
 
-<h3 id="led-firsttest">3.1 Select Board and Port</h3>
+<details class="section-fold" id="led-firsttest"><summary>3.1 Select Board and Port</summary>
+<div class="section-body">
 <ul class="findings">
   <li><strong>Tools &rarr; Board &rarr; ESP32 Arduino &rarr; ESP32 Dev Module</strong></li>
   <li><strong>Tools &rarr; Port &rarr;</strong> select your ESP32's port (COM3+ on Windows, /dev/cu.SLAB_USBtoUART on Mac, /dev/ttyUSB0 on Linux)</li>
   <li>If no port appears: install the CP2102 USB driver (Phase 1.3), unplug and replug</li>
   <li><strong>Tools &rarr; Upload Speed &rarr; 921600</strong> (drop to 115200 if upload errors occur)</li>
 </ul>
-
-<h3>3.2 Upload NeoPixel strandtest</h3>
+</div>
+</details>
+<details class="section-fold"><summary>3.2 Upload NeoPixel strandtest</summary>
+<div class="section-body">
 <p>Don't skip this step. Uploading Adafruit's built-in strandtest example verifies your wiring independently of the custom Psych_Battery code &mdash; if strandtest fails, it's a hardware problem, not a code problem.</p>
 <ul class="findings">
   <li><strong>File &rarr; Examples &rarr; Adafruit NeoPixel &rarr; strandtest</strong></li>
@@ -1457,8 +1518,10 @@ return pageWrapper({ title: 'Psych_Battery: Systems Map & Prototyping', icon: '\
   <li>Plug the 5V wall brick into the wall now. You should NOT see smoke or feel heat. If you do, unplug immediately and re-check polarity and wiring.</li>
   <li>Click <strong>Upload</strong>. First compile takes ~1 minute.</li>
 </ul>
-
-<h3>3.3 Verify the Smoke Test</h3>
+</div>
+</details>
+<details class="section-fold"><summary>3.3 Verify the Smoke Test</summary>
+<div class="section-body">
 <p>If everything is wired correctly, right after upload completes you should see:</p>
 <ul class="findings">
   <li>A <strong>chase animation</strong> &mdash; single LED moving across the module in red, then green, then blue, then white</li>
@@ -1468,11 +1531,13 @@ return pageWrapper({ title: 'Psych_Battery: Systems Map & Prototyping', icon: '\
 </ul>
 
 <div class="callout"><div class="label">If strandtest fails</div><p>Jump to the <a href="#led-troubleshooting">Troubleshooting Guide</a> below. The most common first-time failures are: no common ground (ESP32 GND not tied to LED GND), wrong GPIO pin, level shifter pin 1 (OE) not tied to GND, or WS2812B data wire over 15cm long (causes reflections).</p></div>
-
+</div>
+</details>
 <!-- ============ PHASE 4: COMPLETE FIRMWARE ============ -->
 <div class="phase-header"><span class="phase-num">4</span><span class="phase-title">The Complete Charge Bar Firmware</span><span class="phase-time">2 hours</span></div>
 
-<h3 id="led-chargecode">4.1 Overview of What We're Building</h3>
+<details class="section-fold" id="led-chargecode"><summary>4.1 Overview of What We're Building</summary>
+<div class="section-body">
 <p>Once strandtest works, replace it with the real Psych_Battery sketch that:</p>
 <ul class="findings">
   <li>Connects to your WiFi network</li>
@@ -1483,11 +1548,13 @@ return pageWrapper({ title: 'Psych_Battery: Systems Map & Prototyping', icon: '\
   <li>Applies a breathing pulse via <code>exp(sin(t))</code> for an organic, alive feel</li>
   <li>Falls back to serial commands if WiFi isn't available</li>
 </ul>
-
-<h3>4.2 The Main Arduino Sketch</h3>
+</div>
+</details>
+<details class="section-fold"><summary>4.2 The Main Arduino Sketch</summary>
+<div class="section-body">
 <p>Create a new sketch (<strong>File &rarr; New Sketch</strong>) and paste this code. Save as <code>psych_battery_led.ino</code>.</p>
 
-<span class="code-label">psych_battery_led.ino &mdash; main firmware</span>
+<details class="code-fold"><summary>psych_battery_led.ino &mdash; main firmware</summary>
 <pre class="code-block"><span class="cmt">/*
  * Psych_Battery LED Firmware
  * Hardware: ESP32 DevKit V1 + WS2812B LEDs (Ring+Jewel / matrix / strip)
@@ -1646,14 +1713,21 @@ Adafruit_NeoPixel strip(NUM_LEDS, LED_PIN, NEO_GRB + NEO_KHZ800);
   renderFrame();
   delay(<span class="num">20</span>);   <span class="cmt">// ~50 fps update rate</span>
 }</pre>
-
-<h3>4.3 Edit Your WiFi Credentials</h3>
+</details>
+</div>
+</details>
+<details class="section-fold"><summary>4.3 Edit Your WiFi Credentials</summary>
+<div class="section-body">
 <p>Find these two lines near the top:</p>
+<details class="code-fold"><summary>const char* WIFI_SSID     = "YourWiFiName";</summary>
 <pre class="code-block"><span class="kw">const</span> <span class="ty">char</span>* WIFI_SSID     = <span class="str">"YourWiFiName"</span>;
 <span class="kw">const</span> <span class="ty">char</span>* WIFI_PASSWORD = <span class="str">"YourWiFiPassword"</span>;</pre>
+</details>
 <p>Replace with your actual network name and password. <strong>ESP32 only supports 2.4 GHz WiFi</strong> &mdash; if your home network is 5 GHz only, use your phone's hotspot (usually 2.4 GHz) or ask your router admin to enable a 2.4 GHz band.</p>
-
-<h3>4.4 Set NUM_LEDS for Your Module</h3>
+</div>
+</details>
+<details class="section-fold"><summary>4.4 Set NUM_LEDS for Your Module</summary>
+<div class="section-body">
 <p>Find the <code>#define NUM_LEDS 31</code> line and adjust:</p>
 <ul class="findings">
   <li><strong>Ring + Jewel combo:</strong> <code>NUM_LEDS 31</code> (24 + 7)</li>
@@ -1661,8 +1735,10 @@ Adafruit_NeoPixel strip(NUM_LEDS, LED_PIN, NEO_GRB + NEO_KHZ800);
   <li><strong>4-row WS2812B strip, 144 LED/m, ~48mm rows:</strong> count the LEDs you actually have and set accordingly</li>
   <li><strong>16-LED NeoPixel Ring:</strong> <code>NUM_LEDS 16</code></li>
 </ul>
-
-<h3>4.5 Upload and Monitor</h3>
+</div>
+</details>
+<details class="section-fold"><summary>4.5 Upload and Monitor</summary>
+<div class="section-body">
 <ul class="findings">
   <li>Click <strong>Upload</strong>. Wait for compile + flash.</li>
   <li>Open <strong>Tools &rarr; Serial Monitor</strong>. Set baud rate to <strong>115200</strong>.</li>
@@ -1674,8 +1750,10 @@ Adafruit_NeoPixel strip(NUM_LEDS, LED_PIN, NEO_GRB + NEO_KHZ800);
   <li>Write down the IP address &mdash; you'll need it for the Python backend.</li>
   <li>The LEDs should light up green (100%) with a slow breathing pulse.</li>
 </ul>
-
-<h3>4.6 Test via Serial</h3>
+</div>
+</details>
+<details class="section-fold"><summary>4.6 Test via Serial</summary>
+<div class="section-body">
 <p>In the Serial Monitor, type a number 0-100 and press Enter. The LEDs should hue-shift immediately. Try:</p>
 <ul class="findings">
   <li><code>85</code> &rarr; bright green, healthy pulse</li>
@@ -1683,8 +1761,10 @@ Adafruit_NeoPixel strip(NUM_LEDS, LED_PIN, NEO_GRB + NEO_KHZ800);
   <li><code>15</code> &rarr; red, danger-zone pulse</li>
   <li><code>0</code> &rarr; deep red, minimum pulse</li>
 </ul>
-
-<h3>4.7 Test via Browser</h3>
+</div>
+</details>
+<details class="section-fold"><summary>4.7 Test via Browser</summary>
+<div class="section-body">
 <p>Open a browser on any device on the same WiFi network. Go to <code>http://192.168.1.123/charge?level=42</code> (use your IP). You should see a JSON response and the LEDs will hue-shift within a few milliseconds.</p>
 
 <details class="build-help"><summary>Serial Monitor line-ending settings (fixes "nothing happens when I type a number")</summary><div class="help-body">
@@ -1707,13 +1787,17 @@ Adafruit_NeoPixel strip(NUM_LEDS, LED_PIN, NEO_GRB + NEO_KHZ800);
 </ol>
 <p><strong>Tip:</strong> if your router supports it, assign a <strong>static DHCP lease</strong> for the ESP32's MAC address so it always gets the same IP. Saves you from re-editing <code>BATTERY_IP</code> every time your router reboots.</p>
 </div></details>
-
+</div>
+</details>
 <!-- ============ PHASE 5: PYTHON BACKEND ============ -->
 <div class="phase-header"><span class="phase-num">5</span><span class="phase-title">Python Backend Integration</span><span class="phase-time">1 hour</span></div>
 
-<h3 id="led-python">5.1 Install Python Dependencies</h3>
+<details class="section-fold" id="led-python"><summary>5.1 Install Python Dependencies</summary>
+<div class="section-body">
 <p>On your laptop (the "brain" that calculates mental energy and sends it to the battery):</p>
+<details class="code-fold"><summary>pip install requests aw-client pyserial</summary>
 <pre class="code-block">pip install requests aw-client pyserial</pre>
+</details>
 <ul class="findings">
   <li><code>requests</code> &mdash; sends HTTP requests to the ESP32 over WiFi</li>
   <li><code>aw-client</code> &mdash; queries ActivityWatch for app/website usage data</li>
@@ -1735,12 +1819,14 @@ Adafruit_NeoPixel strip(NUM_LEDS, LED_PIN, NEO_GRB + NEO_KHZ800);
   <li>Verify: <code>python3 --version</code>.</li>
 </ol>
 <p><strong>Virtual env (recommended):</strong> isolates Psych_Battery deps from other Python projects.</p>
+<details class="code-fold"><summary>python -m venv psychbat-env</summary>
 <pre class="code-block">python -m venv psychbat-env
 <span class="cmt"># Windows</span>
 psychbat-env\Scripts\activate
 <span class="cmt"># Mac/Linux</span>
 source psychbat-env/bin/activate
 pip install requests aw-client pyserial</pre>
+</details>
 </div></details>
 
 <details class="build-help"><summary>Install ActivityWatch + browser extension (the data source)</summary><div class="help-body">
@@ -1758,17 +1844,21 @@ pip install requests aw-client pyserial</pre>
   <li>After install, visit any site and refresh the ActivityWatch dashboard. A <code>aw-watcher-web</code> bucket should appear.</li>
 </ul>
 <p><strong>3. Verify Python can read it:</strong></p>
+<details class="code-fold"><summary>python -c "from aw_client import ActivityWatchClient; c = ActivityW…</summary>
 <pre class="code-block">python -c "from aw_client import ActivityWatchClient; c = ActivityWatchClient('test'); print(c.get_buckets().keys())"</pre>
+</details>
 <p>You should see a list including <code>aw-watcher-window_*</code>, <code>aw-watcher-afk_*</code>, and (if the extension is active) <code>aw-watcher-web-chrome</code> or similar.</p>
 <p><strong>Privacy note:</strong> ActivityWatch has no cloud, no telemetry, no network calls beyond localhost. All data is stored in a local SQLite file (<code>~/.local/share/activitywatch/</code> on Linux, similar paths on Win/Mac).</p>
 </div></details>
 
 <div class="callout"><div class="label">Minimum test without the full Python backend</div><p>Before wiring in ActivityWatch, verify the LED half works end-to-end with a one-liner. After saving <code>charge_sender.py</code> (next section): <code>python charge_sender.py 42</code> should hue-shift the LEDs within a second. If that works, the ESP32 + firmware + WiFi are all good &mdash; any later problems are on the Python side.</p></div>
-
-<h3>5.2 The Charge Sender Module</h3>
+</div>
+</details>
+<details class="section-fold"><summary>5.2 The Charge Sender Module</summary>
+<div class="section-body">
 <p>This is the same <code>charge_sender.py</code> used by the E-Ink build &mdash; the ESP32-side HTTP contract is identical (<code>POST /charge</code> with <code>{"level": 0-100}</code>), so the Python interface doesn't change. Save as <code>charge_sender.py</code>:</p>
 
-<span class="code-label">charge_sender.py &mdash; unified charge interface</span>
+<details class="code-fold"><summary>charge_sender.py &mdash; unified charge interface</summary>
 <pre class="code-block"><span class="str">"""
 charge_sender.py - sends charge level (0-100) to the Psych_Battery.
 Tries WiFi first, falls back to serial, logs locally if both fail.
@@ -1854,11 +1944,14 @@ log = logging.getLogger(<span class="str">"charge_sender"</span>)
     sender = ChargeSender()
     ok = sender.send(<span class="ty">int</span>(sys.argv[<span class="num">1</span>]))
     sys.exit(<span class="num">0</span> <span class="kw">if</span> ok <span class="kw">else</span> <span class="num">1</span>)</pre>
-
-<h3>5.3 Connect to the Psych_Battery Energy Score</h3>
+</details>
+</div>
+</details>
+<details class="section-fold"><summary>5.3 Connect to the Psych_Battery Energy Score</summary>
+<div class="section-body">
 <p>This is where Tech Stack meets Build Guide. The same <code>energy_score_to_battery.py</code> loop from the E-Ink guide works unchanged, but for the LED build you can poll more aggressively because there's no e-ink refresh-cycle budget to conserve.</p>
 
-<span class="code-label">energy_score_to_battery.py &mdash; LED-tuned loop</span>
+<details class="code-fold"><summary>energy_score_to_battery.py &mdash; LED-tuned loop</summary>
 <pre class="code-block"><span class="str">"""
 Polls ActivityWatch every 30 seconds (faster than e-ink),
 computes a mental energy score, pushes it to the Psych_Battery LEDs.
@@ -1925,21 +2018,26 @@ RECHARGE_IDLE_PER_MIN = <span class="num">0.4</span>
 
 <span class="kw">if</span> __name__ == <span class="str">"__main__"</span>:
     main()</pre>
+</details>
 
 <div class="callout"><div class="label">LED vs E-Ink polling cadence</div><p>LEDs have no refresh budget &mdash; they update in microseconds and don't accumulate ghosting. Poll every 30-60 seconds so the battery feels live and responds to short AFK breaks. E-ink should poll every 5 minutes (12-second refresh + ghosting). The firmware handles the breathing animation locally, so the ESP32 doesn't need constant new data to look alive.</p></div>
-
+</div>
+</details>
 <!-- ============ PHASE 6: ENCLOSURE ============ -->
 <div class="phase-header"><span class="phase-num">6</span><span class="phase-title">Enclosure, Diffuser &amp; Mounting</span><span class="phase-time">4-5 hours (plus print time)</span></div>
 
-<h3 id="led-enclosure">6.1 Form Factor Considerations</h3>
+<details class="section-fold" id="led-enclosure"><summary>6.1 Form Factor Considerations</summary>
+<div class="section-body">
 <p>The LED build lends itself to a classic cylindrical battery shape, since the Ring+Jewel combo is circular (65.5mm&oslash;). Design choices:</p>
 <ul class="findings">
   <li><strong>Cylinder (recommended):</strong> 70mm outer diameter &times; 110mm tall. Ring+Jewel mounts on the inside front face, pointing forward. Top cap has a 5mm &ldquo;positive terminal&rdquo; bump for the classic AA silhouette.</li>
   <li><strong>Flat-pack laser-cut box:</strong> 80mm &times; 80mm &times; 40mm deep. Faster to fabricate but less battery-like.</li>
   <li><strong>Nalgene-scale:</strong> If matching the <a href="https://www.nalgene.com/shop/wide-mouth-1l/">Nalgene 1L wide-mouth</a> form (88.9mm&oslash; &times; 215.9mm tall), scale the diffuser panel up accordingly &mdash; consider the 8&times;8 matrix for more coverage.</li>
 </ul>
-
-<h3>6.2 Prepare the Diffuser</h3>
+</div>
+</details>
+<details class="section-fold"><summary>6.2 Prepare the Diffuser</summary>
+<div class="section-body">
 <p>The diffuser is what makes LEDs look like a battery glow rather than visible dots.</p>
 <ul class="findings">
   <li><strong>If buying frosted acrylic:</strong> cut a disc or square to fit the enclosure window. No sanding needed.</li>
@@ -1947,8 +2045,10 @@ RECHARGE_IDLE_PER_MIN = <span class="num">0.4</span>
   <li><strong>Diffuser distance:</strong> place <strong>30-50mm from the LED surface</strong>. The Ripple Effect project found <strong>50mm</strong> optimal for the 8&times;8 matrix. Too close and individual LEDs show through as dots; too far and the light loses intensity.</li>
   <li><strong>Test before final assembly:</strong> hold the diffuser in front of the lit LEDs by hand and adjust distance until the glow looks smooth and even.</li>
 </ul>
-
-<h3>6.3 3D Print the Enclosure</h3>
+</div>
+</details>
+<details class="section-fold"><summary>6.3 3D Print the Enclosure</summary>
+<div class="section-body">
 <ul class="findings">
   <li>Design in Fusion 360 (free for UC Berkeley students) or Onshape. A simple two-part cylinder: top cap with terminal bump, bottom shell with a window cutout and internal ledge for the diffuser.</li>
   <li>Print in <strong>black PLA</strong> for the shell (blocks stray light) and <strong>white PLA</strong> for reflective interior surfaces. 0.2mm layer height, 20% infill.</li>
@@ -1959,7 +2059,7 @@ RECHARGE_IDLE_PER_MIN = <span class="num">0.4</span>
 
 <details class="build-help"><summary>Skip CAD: paste-ready OpenSCAD enclosure (exports to STL)</summary><div class="help-body">
 <p>If you don't want to learn Fusion/Onshape, paste this into the free <a href="https://openscad.org/cheatsheet/" target="_blank">OpenSCAD desktop app</a> or the <a href="https://ochafik.com/openscad2/" target="_blank">web-based viewer</a>, adjust the constants at top, then <strong>File &rarr; Export &rarr; Export as STL</strong> and slice in Cura / PrusaSlicer.</p>
-<span class="code-label">psych_battery_shell.scad &mdash; parametric battery enclosure</span>
+<details class="code-fold"><summary>psych_battery_shell.scad &mdash; parametric battery enclosure</summary>
 <pre class="code-block"><span class="cmt">// Psych_Battery LED enclosure shell
 // Cylinder with viewing window, +terminal bump, and back cable slot.
 // Export as STL, then slice at 0.2mm layer / 20% infill / black PLA.</span>
@@ -2001,12 +2101,15 @@ module battery_shell() {
 }
 
 battery_shell();</pre>
+</details>
 <p>Slicer settings that work: 0.2mm layer, 20% gyroid infill, 3 perimeters, no supports needed if the window cutout is oriented downward during printing (lay the cylinder on its side).</p>
 </div></details>
 
 <div class="slide-fig"><img src="/figures/battery/led_diffusion.png" alt="LED diffusion" onclick="openLightbox(this)"><div class="caption">Diffusion distance matters: individual LEDs are visible up close, but the 30-50mm air gap lets the light blend into a single smooth glow behind the frosted acrylic.</div></div>
-
-<h3>6.4 Mount the LED Module</h3>
+</div>
+</details>
+<details class="section-fold"><summary>6.4 Mount the LED Module</summary>
+<div class="section-body">
 <ul class="findings">
   <li><strong>Step 1:</strong> Clean the inside of the enclosure shell with isopropyl alcohol to remove 3D-print dust and release agents.</li>
   <li><strong>Step 2:</strong> Position the LED module (Ring+Jewel or matrix) against the front interior wall. For the cylinder, center it on the front face.</li>
@@ -2014,15 +2117,19 @@ battery_shell();</pre>
   <li><strong>Step 4:</strong> Route the 3-wire bundle (VCC/GND/DIN) through an internal slot to where the ESP32 breadboard sits in the rear of the shell.</li>
   <li><strong>Step 5:</strong> If using a cut LED strip in serpentine layout: arrange segments to fill the viewing window evenly, leaving small gaps between rows for even diffusion. Hot-glue each segment's corners.</li>
 </ul>
-
-<h3>6.5 Install the Diffuser</h3>
+</div>
+</details>
+<details class="section-fold"><summary>6.5 Install the Diffuser</summary>
+<div class="section-body">
 <ul class="findings">
   <li><strong>Step 1:</strong> Rest the frosted diffuser on the internal 3mm ledge. It should be 30-50mm in front of the LED module.</li>
   <li><strong>Step 2:</strong> Run a thin bead of hot glue around the inside perimeter to fix it in place. Don't smear glue onto the viewable front surface.</li>
   <li><strong>Step 3:</strong> Use black electrical tape or black Sharpie around any gaps between the diffuser and shell to block light leaks &mdash; they kill the "glowing object" illusion.</li>
 </ul>
-
-<h3>6.6 Final Assembly</h3>
+</div>
+</details>
+<details class="section-fold"><summary>6.6 Final Assembly</summary>
+<div class="section-body">
 <ul class="findings">
   <li><strong>Step 1:</strong> Route the USB cable out through the back slot, with a small strain-relief knot on the inside so tugs don't pull the ESP32 loose.</li>
   <li><strong>Step 2:</strong> Route the 5V power supply cable through a separate hole (or use a shared larger hole with both cables).</li>
@@ -2030,9 +2137,11 @@ battery_shell();</pre>
   <li><strong>Step 4:</strong> Snap or screw the top cap in place. The battery should look like a closed AA cell with the terminal bump up top.</li>
   <li><strong>Step 5:</strong> Plug in both USB and 5V power. The Ring+Jewel should glow green through the diffuser with a gentle pulse. If there are visible "hot spots" or individual LED dots, increase diffuser distance.</li>
 </ul>
-
+</div>
+</details>
 <!-- ============ APPENDIX: MATRIX OPTIONS ============ -->
-<h3 id="led-matrix">Appendix: LED Matrix Options</h3>
+<details class="section-fold" id="led-matrix"><summary>Appendix: LED Matrix Options</summary>
+<div class="section-body">
 <p>Instead of cutting LED strip into rows, you can use a pre-made matrix panel. Here are the best options for the ~60-70mm cylindrical battery enclosure:</p>
 
 <table class="result-table">
@@ -2051,9 +2160,11 @@ battery_shell();</pre>
   <li><strong>8&times;8 Matrix (rigid or flexible):</strong> Single DIN to level shifter output. <code>NUM_LEDS = 64</code>. Matrix internally chains all 64 LEDs in serpentine &mdash; no soldering between rows.</li>
   <li><strong>4-row strip:</strong> Cut at marked lines, solder 3 wires (VCC/GND/Data) between rows. First row's DIN to level shifter. Last row's DOUT unconnected. <code>NUM_LEDS = total across all rows</code>.</li>
 </ul>
-
+</div>
+</details>
 <!-- ============ COMPARISON ============ -->
-<h3 id="led-compare">Comparison: LED vs E-Ink</h3>
+<details class="section-fold" id="led-compare"><summary>Comparison: LED vs E-Ink</summary>
+<div class="section-body">
 <table class="result-table">
 <tr><th></th><th>LED (this build)</th><th>E-Ink</th></tr>
 <tr><td><strong>Cost</strong></td><td>~$85-95</td><td>~$55-63</td></tr>
@@ -2066,9 +2177,11 @@ battery_shell();</pre>
 <tr><td><strong>Aesthetic</strong></td><td>Warm ambient glow, animated</td><td>Paper-like, minimal, static</td></tr>
 <tr><td><strong>Best for</strong></td><td>Desk-visible, responsive, ambient peripheral</td><td>Low-power, no-blue-light, legible detail</td></tr>
 </table>
-
+</div>
+</details>
 <!-- ============ TROUBLESHOOTING ============ -->
-<h3 id="led-troubleshooting">Troubleshooting Guide</h3>
+<details class="section-fold" id="led-troubleshooting"><summary>Troubleshooting Guide</summary>
+<div class="section-body">
 <table class="result-table">
 <tr><th>Symptom</th><th>Likely Cause</th><th>Fix</th></tr>
 <tr><td>No LEDs light up at all</td><td>No 5V power, missing common ground, wrong GPIO pin</td><td>Verify 5V rail with multimeter. Confirm ESP32 GND is tied to the blue rail. Check <code>#define LED_PIN 16</code> matches wired GPIO.</td></tr>
@@ -2088,6 +2201,8 @@ battery_shell();</pre>
 
 <div class="callout"><div class="label">When to ask for help</div><p>If the LEDs are mis-coloring, flickering, or partially dark, photograph your breadboard top-down under bright light and post to the <a href="https://forums.adafruit.com/viewforum.php?f=47" target="_blank">Adafruit NeoPixel forum</a> with a description of your LED count, power supply rating, and whether strandtest worked. 90% of first-time LED bugs are a missing common ground or a skipped level shifter.</p></div>
 </div>
+</details>
+</div>
 
 <!-- ===== E-INK BUILD GUIDE ===== -->
 <div class="section" id="sec-seinkguide">
@@ -2096,7 +2211,8 @@ battery_shell();</pre>
 
 <div class="slide-fig"><img src="/figures/battery/eink_prototype.png" alt="E-ink battery prototype" onclick="openLightbox(this)"><div class="caption">The finished prototype: a battery-shaped enclosure with the 5.79" 4-color e-ink bar display showing charge level. Yellow fill = healthy, red = danger. Readable in daylight with no backlight. USB-C for power and data.</div></div>
 
-<h3>Table of Contents</h3>
+<details class="section-fold"><summary>Table of Contents</summary>
+<div class="section-body">
 <div class="toc"><ul>
   <li><a href="#eink-why">Why E-Ink for Psych_Battery</a></li>
   <li><a href="#eink-bom">Phase 0: Supplies &amp; What's In Your Kit</a></li>
@@ -2108,8 +2224,10 @@ battery_shell();</pre>
   <li><a href="#eink-enclosure">Phase 6: Enclosure &amp; Mounting</a></li>
   <li><a href="#eink-troubleshooting">Troubleshooting Guide</a></li>
 </ul></div>
-
-<h3 id="eink-why">Why E-Ink for Psych_Battery?</h3>
+</div>
+</details>
+<details class="section-fold" id="eink-why"><summary>Why E-Ink for Psych_Battery?</summary>
+<div class="section-body">
 <ul class="findings">
   <li><strong>Zero blue light.</strong> E-ink reflects ambient light like paper. No backlight, no screen glow. Matches the "no blue-light screens" design constraint perfectly.</li>
   <li><strong>Always-on with zero power.</strong> The charge bar stays visible even when the ESP32 is asleep or unplugged. The display retains its image indefinitely without drawing any current.</li>
@@ -2119,16 +2237,20 @@ battery_shell();</pre>
 </ul>
 
 <div class="callout"><div class="label">Known Limitation: Dark Rooms</div><p>E-ink is not visible in a dark room without ambient light. If your desk is in a dim space, add a <strong>single RGB LED</strong> alongside the e-ink display for low-charge alerts (pulse red when critically depleted). The e-ink handles the primary display; the LED handles dark-room visibility.</p></div>
-
-<h3>Full Circuit Blueprint</h3>
+</div>
+</details>
+<details class="section-fold"><summary>Full Circuit Blueprint</summary>
+<div class="section-body">
 <div class="slide-fig"><img src="/figures/battery/eink_blueprint.png" alt="E-ink circuit blueprint" onclick="openLightbox(this)"><div class="caption">Complete circuit: ESP32 &rarr; SPI signals (MOSI, CLK, CS, DC, RST, BUSY) &rarr; DESPI-C579 driver board &rarr; FPC ribbon cable &rarr; 5.79" 4-color e-ink display showing battery charge bar.</div></div>
-
+</div>
+</details>
 <!-- ============ PHASE 0: SUPPLIES ============ -->
 <div class="phase-header"><span class="phase-num">0</span><span class="phase-title">Supplies &amp; What's In Your Kit</span><span class="phase-time">15 min (inventory)</span></div>
 
 <div class="callout"><div class="label">You bought the ESP32-L(C579) Development Kit from Good Display</div><p>This is the integrated all-in-one kit from buy-lcd.com. It replaces the separate ESP32 DevKit + breadboard + jumper wires + header pins approach. The kit contains everything you need to drive the display &mdash; no breadboard wiring required, no soldering, no purchase of individual electronic components. Just plug the DESPI-C579 into the ESP32-L motherboard, connect the display ribbon cable, and plug in USB.</p></div>
 
-<h3 id="eink-bom">0.1 What's In Your Kit (you already have these)</h3>
+<details class="section-fold" id="eink-bom"><summary>0.1 What's In Your Kit (you already have these)</summary>
+<div class="section-body">
 <table class="result-table">
 <tr><th>Item</th><th>What It Is</th><th>Replaces (from generic BOM)</th></tr>
 <tr><td><strong>5.79" GDEY0579F52 Display</strong></td><td>4-color e-ink panel, 792&times;272, 139&times;48mm active area, 24-pin FPC ribbon</td><td>The display ($18-25)</td></tr>
@@ -2139,8 +2261,10 @@ battery_shell();</pre>
 </table>
 
 <p><strong>Kit covers ~$55 worth of components.</strong> You only need to source the enclosure materials below.</p>
-
-<h3>0.2 Supplies You Still Need (not in the kit)</h3>
+</div>
+</details>
+<details class="section-fold"><summary>0.2 Supplies You Still Need (not in the kit)</summary>
+<div class="section-body">
 <p>These are physical materials for the enclosure and mounting. Most are available at UC Berkeley makerspaces, but bring this list to make sure you don't get stuck mid-build.</p>
 
 <table class="result-table">
@@ -2154,8 +2278,10 @@ battery_shell();</pre>
 </table>
 
 <p><strong>Minimum additional cost: $0-$13</strong> depending on how much you source from Jacobs vs buy yourself. The 3M VHB tape is the one item I'd strongly recommend buying fresh.</p>
-
-<h3>0.3 Tools You'll Use (all free at UC Berkeley makerspaces)</h3>
+</div>
+</details>
+<details class="section-fold"><summary>0.3 Tools You'll Use (all free at UC Berkeley makerspaces)</summary>
+<div class="section-body">
 <table class="result-table">
 <tr><th>Tool</th><th>Purpose</th><th>Where to Find It</th></tr>
 <tr><td><strong>3D printer</strong></td><td>Printing the enclosure (~6-10 hour print for a battery-sized shell)</td><td><a href="https://jacobsinstitute.berkeley.edu/making-at-jacobs/" target="_blank">Jacobs Hall</a> (Ultimakers), <a href="https://supernode.berkeley.edu/" target="_blank">Supernode</a> (24/7, Cory Hall), <a href="https://invent.citris-uc.org/" target="_blank">CITRIS Invention Lab</a> (Sutardja Dai Hall)</td></tr>
@@ -2167,8 +2293,10 @@ battery_shell();</pre>
 </table>
 
 <div class="callout"><div class="label">Maker Pass required</div><p>To use Jacobs Hall, CITRIS Invention Lab, or most Berkeley makerspaces, you need a Maker Pass. Sign up at <a href="https://jacobsinstitute.berkeley.edu/our-space/" target="_blank">jacobsinstitute.berkeley.edu</a> &mdash; free for UC Berkeley students. Supernode is free and 24/7 with no pass required.</p></div>
-
-<h3>0.4 Final Shopping List (if you want to cover everything)</h3>
+</div>
+</details>
+<details class="section-fold"><summary>0.4 Final Shopping List (if you want to cover everything)</summary>
+<div class="section-body">
 <p>If you want to buy everything yourself instead of relying on makerspace supplies, here's the complete list for the enclosure side:</p>
 <ul class="findings">
   <li><a href="https://www.amazon.com/3M-VHB-F9460PC-Adhesive-Transfer/dp/B00N56JA1E" target="_blank">3M VHB F9460PC tape</a> &mdash; ~$8</li>
@@ -2177,11 +2305,13 @@ battery_shell();</pre>
   <li>Assorted sandpaper pack (400/600/1000 grit) &mdash; ~$6 at Home Depot</li>
 </ul>
 <p><strong>Absolute maximum cost beyond the kit: ~$35.</strong> Realistic cost if using makerspace resources: <strong>$8</strong> (just the VHB tape).</p>
-
+</div>
+</details>
 <!-- ============ PHASE 1: SOFTWARE ============ -->
 <div class="phase-header"><span class="phase-num">1</span><span class="phase-title">Software Setup (Arduino IDE + Libraries)</span><span class="phase-time">45 min</span></div>
 
-<h3 id="eink-software">1.1 Install Arduino IDE 2.x</h3>
+<details class="section-fold" id="eink-software"><summary>1.1 Install Arduino IDE 2.x</summary>
+<div class="section-body">
 <p>Arduino IDE is the free program where you'll write code and upload it to the ESP32. It handles compiling, library management, and USB uploading.</p>
 <ul class="findings">
   <li>Go to <a href="https://www.arduino.cc/en/software" target="_blank">arduino.cc/en/software</a></li>
@@ -2189,8 +2319,10 @@ battery_shell();</pre>
   <li>Run the installer. Accept all defaults. On Mac, drag it to Applications.</li>
   <li>Launch Arduino IDE. You'll see an empty sketch with <code>setup()</code> and <code>loop()</code> functions.</li>
 </ul>
-
-<h3>1.2 Add ESP32 Board Support</h3>
+</div>
+</details>
+<details class="section-fold"><summary>1.2 Add ESP32 Board Support</summary>
+<div class="section-body">
 <p>Arduino IDE doesn't know about ESP32 by default. You have to add Espressif's board package URL.</p>
 <ul class="findings">
   <li>In Arduino IDE, go to <strong>File &rarr; Preferences</strong> (Windows/Linux) or <strong>Arduino IDE &rarr; Settings</strong> (macOS)</li>
@@ -2202,16 +2334,20 @@ battery_shell();</pre>
   <li>Install <strong>"esp32 by Espressif Systems"</strong> (version 3.x or higher). This takes ~3-5 minutes.</li>
   <li>After installation: <strong>Tools &rarr; Board &rarr; ESP32 Arduino &rarr; ESP32 Dev Module</strong></li>
 </ul>
-
-<h3>1.3 Install USB Driver (Windows/Mac only)</h3>
+</div>
+</details>
+<details class="section-fold"><summary>1.3 Install USB Driver (Windows/Mac only)</summary>
+<div class="section-body">
 <p>The ESP32 DevKit V1 uses a <strong>CP2102</strong> USB-to-serial chip. Most modern computers have the driver pre-installed, but if your ESP32 doesn't appear as a COM port, install it manually.</p>
 <ul class="findings">
   <li>Download the driver from <a href="https://www.silabs.com/developers/usb-to-uart-bridge-vcp-drivers" target="_blank">Silicon Labs CP2102 drivers</a></li>
   <li>Install, reboot if prompted</li>
   <li>Plug in your ESP32 via USB. Open Arduino IDE &rarr; <strong>Tools &rarr; Port</strong>. You should see a new port appear (COM3+ on Windows, /dev/cu.SLAB_USBtoUART on Mac, /dev/ttyUSB0 on Linux). Select it.</li>
 </ul>
-
-<h3>1.4 Install Required Arduino Libraries</h3>
+</div>
+</details>
+<details class="section-fold"><summary>1.4 Install Required Arduino Libraries</summary>
+<div class="section-body">
 <p>You need three libraries to drive the display and run a WiFi HTTP server. Install via <strong>Sketch &rarr; Include Library &rarr; Manage Libraries</strong>:</p>
 <ul class="findings">
   <li><strong>Adafruit GFX Library</strong> by Adafruit (latest version) &mdash; provides drawing primitives like <code>fillRect</code>, <code>drawLine</code>, <code>setCursor</code>, <code>print</code></li>
@@ -2220,8 +2356,10 @@ battery_shell();</pre>
 </ul>
 
 <p>For the WiFi HTTP server, you'll use <code>WebServer.h</code> which is built into the ESP32 board package &mdash; no separate install needed.</p>
-
-<h3>1.5 Download Good Display's Sample Code for GDEY0579F52</h3>
+</div>
+</details>
+<details class="section-fold"><summary>1.5 Download Good Display's Sample Code for GDEY0579F52</summary>
+<div class="section-body">
 <p>The critical step. The popular GxEPD2 library does <strong>not</strong> support the GDEY0579F52 (dual IST7158 controllers). You must use Good Display's vendor-provided sample code.</p>
 <ul class="findings">
   <li>Go to <a href="https://www.good-display.com/companyfile/1832.html" target="_blank">good-display.com/companyfile/1832.html</a></li>
@@ -2240,11 +2378,13 @@ battery_shell();</pre>
 </ul>
 <p>If the companyfile download is the only one you can find, you can still use it, but you'll need to edit <code>DEV_Config.h</code> to match the ESP32-L pins shown in Phase 3.1 below (BUSY=25, RST=26, DC=27, CS=15, CLK=13, MOSI=14).</p>
 </div></details>
-
+</div>
+</details>
 <!-- ============ PHASE 2: WIRING ============ -->
 <div class="phase-header"><span class="phase-num">2</span><span class="phase-title">Hardware Wiring (Step by Step)</span><span class="phase-time">30 min</span></div>
 
-<h3 id="eink-wiring">2.1 Understand the Components</h3>
+<details class="section-fold" id="eink-wiring"><summary>2.1 Understand the Components</summary>
+<div class="section-body">
 <p>The ESP32-L(C579) kit is designed so the pieces fit together without any breadboard wiring. Here's what each piece does:</p>
 <ul class="findings">
   <li><strong>ESP32-L motherboard:</strong> The "brain." Pre-built ESP32-based board with USB port, reset button, status LEDs, and a built-in socket (called the "DESPI interface") where the connector board plugs in. Has WiFi and Bluetooth built in.</li>
@@ -2254,8 +2394,10 @@ battery_shell();</pre>
 </ul>
 
 <div class="callout"><div class="label">What you're NOT doing (compared to a generic build)</div><p>No breadboard. No jumper wires. No soldering header pins. No debugging 8 separate wire connections. The kit was designed specifically to eliminate all of that. Total assembly time is about 10 minutes.</p></div>
-
-<h3>2.2 Plug the DESPI-C579 Into the ESP32-L Motherboard</h3>
+</div>
+</details>
+<details class="section-fold"><summary>2.2 Plug the DESPI-C579 Into the ESP32-L Motherboard</summary>
+<div class="section-body">
 <p>The ESP32-L motherboard has a dedicated socket (a cluster of female pin headers) labeled something like "DESPI" or with matching silkscreen for the connector board.</p>
 <ul class="findings">
   <li><strong>Step 1:</strong> Find the socket on the ESP32-L motherboard. It's the row of female headers designed to receive the DESPI-C579's pins.</li>
@@ -2263,8 +2405,10 @@ battery_shell();</pre>
   <li><strong>Step 3:</strong> Align the male pins on the bottom of the DESPI-C579 with the female socket on the motherboard. They should only fit one way; if it feels wrong, rotate 180&deg;.</li>
   <li><strong>Step 4:</strong> Press firmly and evenly until the connector board is fully seated. The pins should be fully inserted with no gap between the two boards.</li>
 </ul>
-
-<h3>2.3 Connect the Display Ribbon Cable to the DESPI-C579</h3>
+</div>
+</details>
+<details class="section-fold"><summary>2.3 Connect the Display Ribbon Cable to the DESPI-C579</summary>
+<div class="section-body">
 <p>This is the most delicate step in the entire build. The ribbon cable is fragile &mdash; handle it gently.</p>
 
 <div class="slide-fig"><img src="/figures/battery/eink_ribbon.svg" alt="ZIF ribbon cable insertion: lift tab, insert with contacts DOWN, push tab down" onclick="openLightbox(this)"><div class="caption">Side-view of the DESPI-C579 ZIF connector. The shiny gold contacts on the ribbon MUST face down (toward the PCB). Getting this backwards is the #1 first-build failure.</div></div>
@@ -2279,15 +2423,19 @@ battery_shell();</pre>
 </ul>
 
 <div class="callout"><div class="label">Ribbon cable orientation tip</div><p>If you can't tell which side has contacts: look at the ribbon under a bright light. The contacts are slightly shiny/gold-colored compared to the plastic backing. Those shiny contacts go DOWN (facing the PCB), not up. Getting this backwards is the #1 mistake and will show a blank screen even with correct code.</p></div>
-
-<h3>2.4 Connect USB Cable</h3>
+</div>
+</details>
+<details class="section-fold"><summary>2.4 Connect USB Cable</summary>
+<div class="section-body">
 <ul class="findings">
   <li><strong>Step 1:</strong> Plug the USB cable (included in the kit) into the USB port on the ESP32-L motherboard.</li>
   <li><strong>Step 2:</strong> Plug the other end into your computer.</li>
   <li><strong>Step 3:</strong> You should see a power LED light up on the ESP32-L. If nothing lights up, try a different USB cable or port (the kit cable should work, but computer ports can be flaky).</li>
 </ul>
-
-<h3>2.5 Physical Assembly Check</h3>
+</div>
+</details>
+<details class="section-fold"><summary>2.5 Physical Assembly Check</summary>
+<div class="section-body">
 <p>Before moving on to software, verify:</p>
 <ul class="findings">
   <li>DESPI-C579 is fully seated in the ESP32-L motherboard socket (no visible gap)</li>
@@ -2300,11 +2448,13 @@ battery_shell();</pre>
 <p>That's it. Hardware assembly is done. With the kit, this takes about 10 minutes compared to the 30+ minutes of breadboard wiring a generic build would require.</p>
 
 <div class="slide-fig"><img src="/figures/battery/eink_assembly.png" alt="E-ink assembly" onclick="openLightbox(this)"><div class="caption">Assembly: the display ribbon cable inserts into the ZIF connector on the DESPI-C579, which in turn plugs into the ESP32-L motherboard's socket. No breadboard, no jumper wires.</div></div>
-
+</div>
+</details>
 <!-- ============ PHASE 3: FIRST TEST ============ -->
 <div class="phase-header"><span class="phase-num">3</span><span class="phase-title">First Upload &amp; Smoke Test</span><span class="phase-time">15 min</span></div>
 
-<h3 id="eink-firsttest">3.1 Good News: No Pin Editing Needed</h3>
+<details class="section-fold" id="eink-firsttest"><summary>3.1 Good News: No Pin Editing Needed</summary>
+<div class="section-body">
 <p>With the ESP32-L(C579) kit, the sample code from Good Display is <strong>preconfigured for the ESP32-L motherboard's fixed GPIO pin mapping</strong>. Unlike a generic ESP32 + DESPI-C579 on a breadboard (where you pick your own pins and edit <code>DEV_Config.h</code>), the ESP32-L hardware routes the display signals to specific GPIOs that the sample code already knows about.</p>
 
 <div class="callout"><div class="label">Just for reference: ESP32-L pin mapping</div><p>You don't need to change these, but in case you want to know what's happening under the hood, the ESP32-L routes display signals to these GPIOs (documented in the sample code's <code>DEV_Config.h</code>):
@@ -2312,8 +2462,10 @@ battery_shell();</pre>
 <code>BUSY &rarr; GPIO 25 | RST &rarr; GPIO 26 | DC &rarr; GPIO 27 | CS &rarr; GPIO 15 | CLK &rarr; GPIO 13 | MOSI &rarr; GPIO 14</code>
 <br><br>
 These are hardwired on the ESP32-L motherboard's PCB. Don't change them in the sample code.</p></div>
-
-<h3>3.2 Download the ESP32-L(C579) Sample Code</h3>
+</div>
+</details>
+<details class="section-fold"><summary>3.2 Download the ESP32-L(C579) Sample Code</summary>
+<div class="section-body">
 <p>Good Display provides a specific sample code bundle for the ESP32-L(C579) kit. <strong>This is different from the generic GDEY0579F52 sample</strong> &mdash; make sure you get the right one.</p>
 <ul class="findings">
   <li>Go to the <a href="https://buyepaper.com/products/579-inch-e-paper-display-development-kit-esp32-epaper-board-esp32-lc579" target="_blank">ESP32-L(C579) product page</a> on buyepaper.com</li>
@@ -2321,8 +2473,10 @@ These are hardwired on the ESP32-L motherboard's PCB. Don't change them in the s
   <li>Unzip the archive. You should see a folder with the main <code>.ino</code> Arduino sketch and support files: <code>EPD_5in79_G.h</code>, <code>EPD_5in79_G.cpp</code>, <code>DEV_Config.h</code>, <code>DEV_Config.cpp</code>, <code>ImageData.h</code>, and <code>GUI_Paint.h/.cpp</code></li>
   <li>Open the <code>.ino</code> file in Arduino IDE. If it asks to move into a correctly named folder, click yes.</li>
 </ul>
-
-<h3>3.3 Select Board and Port</h3>
+</div>
+</details>
+<details class="section-fold"><summary>3.3 Select Board and Port</summary>
+<div class="section-body">
 <ul class="findings">
   <li><strong>Tools &rarr; Board &rarr; ESP32 Arduino &rarr; ESP32 Dev Module</strong> (the ESP32-L uses the generic ESP32 profile)</li>
   <li><strong>Tools &rarr; Port &rarr;</strong> select the port your ESP32-L is on (COM3+ on Windows, /dev/cu.SLAB_USBtoUART on Mac, /dev/ttyUSB0 on Linux)</li>
@@ -2330,8 +2484,10 @@ These are hardwired on the ESP32-L motherboard's PCB. Don't change them in the s
   <li><strong>Tools &rarr; Upload Speed &rarr; 921600</strong> (or 115200 if upload errors occur)</li>
   <li><strong>Tools &rarr; Partition Scheme &rarr; Default 4MB with spiffs</strong></li>
 </ul>
-
-<h3>3.4 Upload the Unmodified Sample Code</h3>
+</div>
+</details>
+<details class="section-fold"><summary>3.4 Upload the Unmodified Sample Code</summary>
+<div class="section-body">
 <p>This is your "hello world." The sample will display test patterns to verify everything works before you write custom code.</p>
 <ul class="findings">
   <li>Click the <strong>Upload</strong> button (right-arrow icon, top-left). First compile takes 2-3 minutes (library cache builds).</li>
@@ -2362,11 +2518,13 @@ These are hardwired on the ESP32-L motherboard's PCB. Don't change them in the s
 <p>If steps 1&ndash;3 happen but the final image is blurry, ghosted, or only half the panel shows content, the ribbon is likely seated imperfectly &mdash; re-seat it.</p>
 <p>If the display never reacts at all, the most likely cause is wrong sample code (generic vs ESP32-L variant). See the dropdown at Phase 1.5.</p>
 </div></details>
-
+</div>
+</details>
 <!-- ============ PHASE 4: COMPLETE FIRMWARE ============ -->
 <div class="phase-header"><span class="phase-num">4</span><span class="phase-title">The Complete Charge Bar Firmware</span><span class="phase-time">2 hours</span></div>
 
-<h3 id="eink-chargecode">4.1 Overview of What We're Building</h3>
+<details class="section-fold" id="eink-chargecode"><summary>4.1 Overview of What We're Building</summary>
+<div class="section-body">
 <p>Once the sample code works, we'll replace its logic with a real Psych_Battery sketch that:</p>
 <ul class="findings">
   <li>Connects to your WiFi network</li>
@@ -2378,12 +2536,15 @@ These are hardwired on the ESP32-L motherboard's PCB. Don't change them in the s
   <li>Does a full refresh every 10 updates to clear ghosting</li>
   <li>Falls back to serial commands if WiFi isn't available</li>
 </ul>
-
-<h3>4.2 The Main Arduino Sketch</h3>
+</div>
+</details>
+<details class="section-fold"><summary>4.2 The Main Arduino Sketch</summary>
+<div class="section-body">
 <p>Create a new sketch (<strong>File &rarr; New Sketch</strong>) and paste this code. Save as <code>psych_battery_eink.ino</code>. You'll also need to copy the Good Display support files (<code>EPD_5in79_G.h</code>, <code>EPD_5in79_G.cpp</code>, <code>DEV_Config.h</code>, <code>DEV_Config.cpp</code>) into the sketch folder.</p>
 
 <details class="build-help"><summary>What goes in the "sketch folder"</summary><div class="help-body">
 <p>When you save the sketch as <code>psych_battery_eink.ino</code>, Arduino creates a folder by the same name. Drop the support files in next to the <code>.ino</code>:</p>
+<details class="code-fold"><summary>psych_battery_eink/</summary>
 <pre class="code-block">psych_battery_eink/
 ├── psych_battery_eink.ino     &larr; your main sketch
 ├── EPD_5in79_G.h
@@ -2391,6 +2552,7 @@ These are hardwired on the ESP32-L motherboard's PCB. Don't change them in the s
 ├── DEV_Config.h
 ├── DEV_Config.cpp
 └── ImageData.h                &larr; optional, only if you display bitmaps</pre>
+</details>
 <p>Use <strong>Sketch &rarr; Show Sketch Folder</strong> to open the folder in Explorer/Finder; then copy the files in from the Good Display ZIP. Restart Arduino IDE after adding them so the tabs refresh.</p>
 </div></details>
 
@@ -2410,7 +2572,7 @@ These are hardwired on the ESP32-L motherboard's PCB. Don't change them in the s
 </div></details>
 
 
-<span class="code-label">psych_battery_eink.ino &mdash; main firmware</span>
+<details class="code-fold"><summary>psych_battery_eink.ino &mdash; main firmware</summary>
 <pre class="code-block"><span class="cmt">/*
  * Psych_Battery E-Ink Firmware
  * Hardware: ESP32 DevKit V1 + GDEY0579F52 (5.79" 4-color e-ink) + DESPI-C579
@@ -2626,14 +2788,21 @@ These are hardwired on the ESP32-L motherboard's PCB. Don't change them in the s
   Paint_DrawString_EN(<span class="num">250</span>, <span class="num">10</span>, <span class="str">"PSYCH_BATTERY"</span>,
                       &amp;Font24, EPD_WHITE, EPD_BLACK);
 }</pre>
-
-<h3>4.3 Edit Your WiFi Credentials</h3>
+</details>
+</div>
+</details>
+<details class="section-fold"><summary>4.3 Edit Your WiFi Credentials</summary>
+<div class="section-body">
 <p>Find these two lines near the top:</p>
+<details class="code-fold"><summary>const char* WIFI_SSID     = "YourWiFiName";</summary>
 <pre class="code-block"><span class="kw">const</span> <span class="ty">char</span>* WIFI_SSID     = <span class="str">"YourWiFiName"</span>;
 <span class="kw">const</span> <span class="ty">char</span>* WIFI_PASSWORD = <span class="str">"YourWiFiPassword"</span>;</pre>
+</details>
 <p>Replace with your actual network name and password. <strong>ESP32 only supports 2.4 GHz WiFi</strong> &mdash; if your home network is 5 GHz only, either use the hotspot from your phone (usually 2.4 GHz) or ask your router admin to enable a 2.4 GHz band.</p>
-
-<h3>4.4 Upload and Monitor</h3>
+</div>
+</details>
+<details class="section-fold"><summary>4.4 Upload and Monitor</summary>
+<div class="section-body">
 <ul class="findings">
   <li>Click <strong>Upload</strong>. Wait for compile + flash (~1 minute after libraries are cached).</li>
   <li>Open <strong>Tools &rarr; Serial Monitor</strong>. Set baud rate to <strong>115200</strong>.</li>
@@ -2645,8 +2814,10 @@ These are hardwired on the ESP32-L motherboard's PCB. Don't change them in the s
   <li>Write down the IP address &mdash; you'll need it for the Python backend.</li>
   <li>The display will do one full refresh showing a 100% battery bar in yellow with black "100%" text.</li>
 </ul>
-
-<h3>4.5 Test via Serial</h3>
+</div>
+</details>
+<details class="section-fold"><summary>4.5 Test via Serial</summary>
+<div class="section-body">
 <p>In the Serial Monitor, type a number 0-100 and press Enter. The display should refresh with the new charge level within 12 seconds. Try:</p>
 <ul class="findings">
   <li><code>85</code> &rarr; large yellow fill, "85%" text</li>
@@ -2654,16 +2825,22 @@ These are hardwired on the ESP32-L motherboard's PCB. Don't change them in the s
   <li><code>15</code> &rarr; short red fill (in the danger zone)</li>
   <li><code>0</code> &rarr; empty outline, "0%" text</li>
 </ul>
-
-<h3>4.6 Test via Browser</h3>
+</div>
+</details>
+<details class="section-fold"><summary>4.6 Test via Browser</summary>
+<div class="section-body">
 <p>Open a browser on any device on the same WiFi network. Go to <code>http://192.168.1.123/charge?level=42</code> (use your IP). You should see a JSON response and the display will update.</p>
-
+</div>
+</details>
 <!-- ============ PHASE 5: PYTHON BACKEND ============ -->
 <div class="phase-header"><span class="phase-num">5</span><span class="phase-title">Python Backend Integration</span><span class="phase-time">1 hour</span></div>
 
-<h3 id="eink-python">5.1 Install Python Dependencies</h3>
+<details class="section-fold" id="eink-python"><summary>5.1 Install Python Dependencies</summary>
+<div class="section-body">
 <p>On your laptop (the "brain" that calculates mental energy and sends it to the battery):</p>
+<details class="code-fold"><summary>pip install requests aw-client pyserial</summary>
 <pre class="code-block">pip install requests aw-client pyserial</pre>
+</details>
 <ul class="findings">
   <li><code>requests</code> &mdash; sends HTTP requests to the ESP32 over WiFi</li>
   <li><code>aw-client</code> &mdash; queries ActivityWatch for app/website usage data</li>
@@ -2683,12 +2860,14 @@ These are hardwired on the ESP32-L motherboard's PCB. Don't change them in the s
   <li>Use <code>python3</code> and <code>pip3</code> explicitly (not <code>python</code>/<code>pip</code>).</li>
 </ul>
 <p><strong>Recommended: use a virtualenv</strong> so these libraries don't pollute the system install.</p>
+<details class="code-fold"><summary>python -m venv .venv</summary>
 <pre class="code-block">python -m venv .venv
 # Windows
 .venv\Scripts\activate
 # macOS/Linux
 source .venv/bin/activate
 pip install requests aw-client pyserial</pre>
+</details>
 </div></details>
 
 <details class="build-help"><summary>Install ActivityWatch + the browser extension</summary><div class="help-body">
@@ -2702,7 +2881,9 @@ pip install requests aw-client pyserial</pre>
     </ul>
   </li>
   <li>Verify the client can connect:
+<details class="code-fold"><summary>python -c "from aw_client import ActivityWatchClient; c = ActivityW…</summary>
 <pre class="code-block">python -c "from aw_client import ActivityWatchClient; c = ActivityWatchClient('test'); print(c.get_buckets())"</pre>
+</details>
   You should see a dict with bucket names like <code>aw-watcher-window_&lt;host&gt;</code> and <code>aw-watcher-afk_&lt;host&gt;</code>. Empty dict = daemon not running.</li>
 </ol>
 <p><strong>Privacy note:</strong> AW is local-only by default. Nothing leaves your laptop unless you configure sync. If you're uncomfortable with keystroke-adjacent data logging, you can run AW only during work sessions and stop the daemon when done.</p>
@@ -2713,11 +2894,13 @@ pip install requests aw-client pyserial</pre>
 <code>python charge_sender.py 42</code>
 <br><br>
 (or simply <code>curl "http://&lt;BATTERY_IP&gt;/charge?level=42"</code> from any shell). If the display redraws, the end-to-end pipe works and you can bolt on the energy-score calculator later.</p></div>
-
-<h3>5.2 The Charge Sender Module</h3>
+</div>
+</details>
+<details class="section-fold"><summary>5.2 The Charge Sender Module</summary>
+<div class="section-body">
 <p>Save this as <code>charge_sender.py</code> &mdash; it's the interface between your energy-score calculator and the physical battery:</p>
 
-<span class="code-label">charge_sender.py &mdash; unified charge interface</span>
+<details class="code-fold"><summary>charge_sender.py &mdash; unified charge interface</summary>
 <pre class="code-block"><span class="str">"""
 charge_sender.py - sends charge level (0-100) to the Psych_Battery.
 Tries WiFi first, falls back to serial, logs locally if both fail.
@@ -2807,11 +2990,14 @@ log = logging.getLogger(<span class="str">"charge_sender"</span>)
     sender = ChargeSender()
     ok = sender.send(<span class="ty">int</span>(sys.argv[<span class="num">1</span>]))
     sys.exit(<span class="num">0</span> <span class="kw">if</span> ok <span class="kw">else</span> <span class="num">1</span>)</pre>
-
-<h3>5.3 Connect to the Psych_Battery Energy Score</h3>
+</details>
+</div>
+</details>
+<details class="section-fold"><summary>5.3 Connect to the Psych_Battery Energy Score</summary>
+<div class="section-body">
 <p>This is where Tech Stack meets Build Guide. Here's a minimal example that queries ActivityWatch, computes an energy score, and pushes it to the display:</p>
 
-<span class="code-label">energy_score_to_battery.py &mdash; the core loop</span>
+<details class="code-fold"><summary>energy_score_to_battery.py &mdash; the core loop</summary>
 <pre class="code-block"><span class="str">"""
 Polls ActivityWatch every 5 minutes, computes a mental energy score,
 and pushes it to the Psych_Battery display.
@@ -2894,8 +3080,11 @@ RECHARGE_IDLE_PER_MIN = <span class="num">0.4</span>    <span class="cmt"># AFK/
 
 <span class="kw">if</span> __name__ == <span class="str">"__main__"</span>:
     main()</pre>
-
-<h3>5.4 Run and Verify the Full Loop</h3>
+</details>
+</div>
+</details>
+<details class="section-fold"><summary>5.4 Run and Verify the Full Loop</summary>
+<div class="section-body">
 <ul class="findings">
   <li>Start ActivityWatch (if not already running): <code>aw-qt</code> or open the app</li>
   <li>Make sure the browser extension is installed (Chrome/Firefox)</li>
@@ -2905,27 +3094,33 @@ RECHARGE_IDLE_PER_MIN = <span class="num">0.4</span>    <span class="cmt"># AFK/
 </ul>
 
 <div class="callout"><div class="label">Sanity check</div><p>For the first hour, run with <code>POLL_INTERVAL_SEC = 60</code> (every minute) to verify updates flow through. Once you trust the pipeline, set it back to 300 (every 5 minutes) &mdash; e-ink displays have a limited number of refresh cycles before ghosting accumulates, and 5 minutes gives the score time to meaningfully change.</p></div>
-
+</div>
+</details>
 <!-- ============ PHASE 6: ENCLOSURE ============ -->
 <div class="phase-header"><span class="phase-num">6</span><span class="phase-title">Enclosure &amp; Mounting</span><span class="phase-time">3-4 hours</span></div>
 
-<h3 id="eink-enclosure">6.1 Form Factor Considerations</h3>
+<details class="section-fold" id="eink-enclosure"><summary>6.1 Form Factor Considerations</summary>
+<div class="section-body">
 <p>The GDEY0579F52 is <strong>151 &times; 57mm</strong> (outline) with a <strong>139 &times; 48mm</strong> active area. That's roughly 6" &times; 2.25" &mdash; larger than a typical AA battery. Design choices:</p>
 <ul class="findings">
   <li><strong>Elongated battery form:</strong> Make the whole enclosure ~170mm tall &times; 65mm wide &times; 30mm deep. The display sits on the front face; the ESP32 + DESPI-C579 fits inside.</li>
   <li><strong>Horizontal "battery brick":</strong> Lay the display horizontally on a shorter wide enclosure &mdash; more like a power bank than an AA cell.</li>
   <li><strong>Recessed window:</strong> Cut the window to 139 &times; 48mm (matching the active area exactly). The display's bezel (6mm on all sides) sits behind the opaque front face, hiding the edges.</li>
 </ul>
-
-<h3>6.2 3D Print at Jacobs Hall or Supernode</h3>
+</div>
+</details>
+<details class="section-fold"><summary>6.2 3D Print at Jacobs Hall or Supernode</summary>
+<div class="section-body">
 <ul class="findings">
   <li>Design in Fusion 360 (free for UC Berkeley students) or Onshape</li>
   <li>Print in white or black PLA, 0.2mm layer height, 20% infill</li>
   <li>Two parts: front face (with window) and rear shell. Join with M3 screws or friction fit.</li>
   <li>Add a slot on the back for the USB cable exit and a hole for the ribbon cable to pass from display to driver board inside</li>
 </ul>
-
-<h3>6.3 Mount the Display</h3>
+</div>
+</details>
+<details class="section-fold"><summary>6.3 Mount the Display</summary>
+<div class="section-body">
 <ul class="findings">
   <li><strong>Step 1:</strong> Clean the inside of the front face and the bezel of the display with isopropyl alcohol</li>
   <li><strong>Step 2:</strong> Apply thin double-sided tape (3M VHB F9460PC, 0.15mm thick) around the bezel area only &mdash; never on the active area</li>
@@ -2935,9 +3130,11 @@ RECHARGE_IDLE_PER_MIN = <span class="num">0.4</span>    <span class="cmt"># AFK/
 </ul>
 
 <div class="callout"><div class="label">No frosted acrylic needed</div><p>Unlike the LED build, e-ink is already matte and paper-like. The display surface IS the final surface. You can optionally add a thin clear acrylic pane over the window for physical protection, but it reduces contrast slightly and isn't required.</p></div>
-
+</div>
+</details>
 <!-- ============ COMPARISON ============ -->
-<h3>Comparison: E-Ink vs LED Alternatives</h3>
+<details class="section-fold"><summary>Comparison: E-Ink vs LED Alternatives</summary>
+<div class="section-body">
 <table class="result-table">
 <tr><th></th><th>E-Ink (this build)</th><th>LED + Frosted Glass</th></tr>
 <tr><td><strong>Cost</strong></td><td>~$55-63</td><td>~$80-130</td></tr>
@@ -2949,9 +3146,11 @@ RECHARGE_IDLE_PER_MIN = <span class="num">0.4</span>    <span class="cmt"># AFK/
 <tr><td><strong>Information density</strong></td><td>High (text, graphics, percentages)</td><td>Low (color + brightness)</td></tr>
 <tr><td><strong>Aesthetic</strong></td><td>Paper-like, minimal</td><td>Warm ambient glow</td></tr>
 </table>
-
+</div>
+</details>
 <!-- ============ TROUBLESHOOTING ============ -->
-<h3 id="eink-troubleshooting">Troubleshooting Guide</h3>
+<details class="section-fold" id="eink-troubleshooting"><summary>Troubleshooting Guide</summary>
+<div class="section-body">
 <table class="result-table">
 <tr><th>Symptom</th><th>Likely Cause</th><th>Fix</th></tr>
 <tr><td>Upload fails: "Failed to connect to ESP32"</td><td>Board/Port not selected, or auto-reset circuit faulty</td><td>Tools &rarr; Port &rarr; pick COM port. Press &amp; hold BOOT button on ESP32 while upload starts, release when "Writing" appears.</td></tr>
@@ -2969,6 +3168,8 @@ RECHARGE_IDLE_PER_MIN = <span class="num">0.4</span>    <span class="cmt"># AFK/
 </table>
 
 <div class="callout"><div class="label">When to ask for help</div><p>If you've re-seated the ribbon cable, confirmed the DESPI-C579 is fully plugged in, and the display still doesn't respond: post on the <a href="https://forum.arduino.cc/" target="_blank">Arduino Forum</a> with "ESP32-L C579 GDEY0579F52" in the title, include photos of your assembled kit, and mention which sample code version you downloaded. Good Display's support team also responds to emails directly at <code>info@good-display.com</code>.</p></div>
+</div>
+</details>
 </div>
 
 </div>
