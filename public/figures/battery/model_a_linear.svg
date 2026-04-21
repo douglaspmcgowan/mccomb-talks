@@ -1,0 +1,112 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif">
+  <defs>
+    <linearGradient id="fillA" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0" stop-color="#fde68a" stop-opacity="0.55"/>
+      <stop offset="1" stop-color="#fde68a" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+  <rect width="960" height="480" fill="#fafafa"/>
+
+  <text x="480" y="38" text-anchor="middle" font-size="22" font-weight="700" fill="#0f172a">Model A &#8212; Linear weighted sum with exponential decay</text>
+  <text x="480" y="60" text-anchor="middle" font-size="12" fill="#64748b">Events add or subtract a fixed weight; between events the score decays toward zero at rate 1/&#964;.</text>
+
+  <!-- equation card -->
+  <g transform="translate(40,90)">
+    <rect x="0" y="0" width="360" height="52" rx="6" fill="#fff" stroke="#cbd5e1"/>
+    <text x="14" y="22" font-size="12" font-weight="700" fill="#334155">Update rule</text>
+    <text x="14" y="42" font-size="13" font-family="'SF Mono',Consolas,monospace" fill="#0f172a">E&#8242; = E &middot; exp(-&#916;t/&#964;) + &Sigma; w&#7522; &middot; x&#7522;(t)</text>
+  </g>
+
+  <!-- legend -->
+  <g transform="translate(430,90)" font-size="11" fill="#475569">
+    <rect x="0" y="0" width="490" height="52" rx="6" fill="#fff" stroke="#cbd5e1"/>
+    <!-- drain example -->
+    <polygon points="20,34 30,18 40,34" fill="#dc2626"/>
+    <text x="48" y="30" font-weight="600">drain event</text>
+    <text x="48" y="45" font-size="9">(meeting, context-switch)</text>
+    <!-- recover example -->
+    <polygon points="170,18 180,34 190,18" fill="#059669" transform="translate(0,0)"/>
+    <text x="198" y="30" font-weight="600">recover event</text>
+    <text x="198" y="45" font-size="9">(walk, focus block, break)</text>
+    <!-- decay line -->
+    <line x1="330" y1="26" x2="370" y2="26" stroke="#f59e0b" stroke-width="2.5"/>
+    <text x="378" y="30" font-weight="600">E(t) with decay</text>
+    <text x="378" y="45" font-size="9">&#964; = 2 h half-life</text>
+  </g>
+
+  <!-- plot area -->
+  <g transform="translate(60,180)">
+    <!-- axes -->
+    <line x1="0" y1="200" x2="860" y2="200" stroke="#475569" stroke-width="1.2"/>
+    <line x1="0" y1="0" x2="0" y2="200" stroke="#475569" stroke-width="1.2"/>
+    <text x="-8" y="5" text-anchor="end" font-size="10" fill="#64748b">100</text>
+    <text x="-8" y="105" text-anchor="end" font-size="10" fill="#64748b">50</text>
+    <text x="-8" y="205" text-anchor="end" font-size="10" fill="#64748b">0</text>
+    <text x="-40" y="100" text-anchor="middle" font-size="11" fill="#475569" transform="rotate(-90 -40 100)">E(t)</text>
+
+    <!-- hour ticks -->
+    <g font-size="10" fill="#64748b">
+      <line x1="0"   y1="200" x2="0"   y2="206" stroke="#475569"/><text x="0"   y="222" text-anchor="middle">9am</text>
+      <line x1="123" y1="200" x2="123" y2="206" stroke="#475569"/><text x="123" y="222" text-anchor="middle">10am</text>
+      <line x1="246" y1="200" x2="246" y2="206" stroke="#475569"/><text x="246" y="222" text-anchor="middle">11am</text>
+      <line x1="369" y1="200" x2="369" y2="206" stroke="#475569"/><text x="369" y="222" text-anchor="middle">noon</text>
+      <line x1="492" y1="200" x2="492" y2="206" stroke="#475569"/><text x="492" y="222" text-anchor="middle">1pm</text>
+      <line x1="615" y1="200" x2="615" y2="206" stroke="#475569"/><text x="615" y="222" text-anchor="middle">2pm</text>
+      <line x1="738" y1="200" x2="738" y2="206" stroke="#475569"/><text x="738" y="222" text-anchor="middle">3pm</text>
+      <line x1="860" y1="200" x2="860" y2="206" stroke="#475569"/><text x="860" y="222" text-anchor="middle">4pm</text>
+    </g>
+
+    <!-- E(t) curve under fill -->
+    <path d="M 0 30
+             L 60 46
+             L 60 92    L 123 120
+             L 123 108  L 180 128
+             L 180 152  L 246 164
+             L 246 100  L 310 130
+             L 310 168  L 369 186
+             L 369 138  L 430 154
+             L 430 186  L 492 196
+             L 492 120  L 560 150
+             L 560 174  L 615 190
+             L 615 150  L 680 170
+             L 680 196  L 738 200
+             L 738 130  L 800 156
+             L 800 180  L 860 192"
+          fill="none" stroke="#f59e0b" stroke-width="2.8" stroke-linejoin="round"/>
+
+    <!-- event markers -->
+    <g>
+      <!-- 10am: big meeting drain -->
+      <polygon points="60,100 52,80 68,80" fill="#dc2626"/>
+      <text x="60" y="75" text-anchor="middle" font-size="9" fill="#7f1d1d">60 min mtg</text>
+      <!-- 10:30am: context switch -->
+      <polygon points="123,115 117,100 129,100" fill="#dc2626"/>
+      <!-- 11am: focus block recover -->
+      <polygon points="180,135 174,150 186,150" fill="#059669"/>
+      <text x="180" y="165" text-anchor="middle" font-size="9" fill="#065f46">focus block</text>
+      <!-- 11:30am: meeting -->
+      <polygon points="246,107 240,92 252,92" fill="#dc2626"/>
+      <!-- noon: walk outside -->
+      <polygon points="310,140 304,155 316,155" fill="#059669"/>
+      <text x="310" y="170" text-anchor="middle" font-size="9" fill="#065f46">walk</text>
+      <!-- 1pm: drain (video mtg) -->
+      <polygon points="369,148 363,133 375,133" fill="#dc2626"/>
+      <text x="369" y="128" text-anchor="middle" font-size="9" fill="#7f1d1d">video call</text>
+      <!-- 1:30pm: context switch -->
+      <polygon points="430,170 424,155 436,155" fill="#dc2626"/>
+      <!-- 2:30pm: task done -->
+      <polygon points="560,162 554,177 566,177" fill="#059669"/>
+      <text x="560" y="192" text-anchor="middle" font-size="9" fill="#065f46">task done</text>
+      <!-- 3pm: big drain -->
+      <polygon points="680,180 674,165 686,165" fill="#dc2626"/>
+      <!-- 3:30pm: afk 10min -->
+      <polygon points="738,180 732,195 744,195" fill="#059669"/>
+      <text x="738" y="212" text-anchor="middle" font-size="9" fill="#065f46">break</text>
+    </g>
+  </g>
+
+  <!-- footer note -->
+  <g transform="translate(60,430)">
+    <text x="0" y="0" font-size="11" fill="#64748b"><tspan font-weight="700" fill="#334155">Tradeoff: </tspan>transparent &amp; easy to ship on day 1, but ignores chronotype, stress accumulation, and recovery type. Serves as a sanity-check baseline.</text>
+  </g>
+</svg>

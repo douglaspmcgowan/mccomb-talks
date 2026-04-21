@@ -1,0 +1,116 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif">
+  <defs>
+    <marker id="arrG" markerWidth="10" markerHeight="10" refX="9" refY="3.5" orient="auto">
+      <path d="M0,0 L9,3.5 L0,7 Z" fill="#334155"/>
+    </marker>
+  </defs>
+  <rect width="960" height="480" fill="#fafafa"/>
+
+  <text x="480" y="38" text-anchor="middle" font-size="22" font-weight="700" fill="#0f172a">Model G &#8212; Contextual-bandit / RL policy (speculative)</text>
+  <text x="480" y="60" text-anchor="middle" font-size="12" fill="#64748b">The battery learns, per-user, which interventions actually restore energy. Each nudge is an arm; the context is the current state vector; the reward is downstream E.</text>
+
+  <!-- ============================= LEFT: LOOP ============================= -->
+  <g transform="translate(60,100)">
+
+    <!-- State -->
+    <g>
+      <rect x="0" y="60" width="140" height="90" rx="8" fill="#fff" stroke="#334155" stroke-width="1.8"/>
+      <text x="70" y="82" text-anchor="middle" font-size="13" font-weight="700" fill="#0f172a">State s&#7524;</text>
+      <text x="70" y="100" text-anchor="middle" font-size="10" fill="#475569">(E, S, F,</text>
+      <text x="70" y="114" text-anchor="middle" font-size="10" fill="#475569">time, context)</text>
+      <text x="70" y="134" text-anchor="middle" font-size="9" fill="#94a3b8" font-style="italic">from Model B + E</text>
+    </g>
+
+    <!-- Policy -->
+    <g>
+      <rect x="190" y="60" width="140" height="90" rx="8" fill="#eff6ff" stroke="#2563eb" stroke-width="1.8"/>
+      <text x="260" y="82" text-anchor="middle" font-size="13" font-weight="700" fill="#1e3a8a">Policy &pi;(a|s)</text>
+      <text x="260" y="100" text-anchor="middle" font-size="10" fill="#1e40af">linear / neural</text>
+      <text x="260" y="114" text-anchor="middle" font-size="10" fill="#1e40af">contextual bandit</text>
+      <text x="260" y="134" text-anchor="middle" font-size="9" fill="#94a3b8" font-style="italic">learned online</text>
+    </g>
+
+    <!-- Action -->
+    <g>
+      <rect x="380" y="60" width="150" height="90" rx="8" fill="#fff" stroke="#334155" stroke-width="1.8"/>
+      <text x="455" y="80" text-anchor="middle" font-size="13" font-weight="700" fill="#0f172a">Action a&#7524;</text>
+      <text x="455" y="98" text-anchor="middle" font-size="10" fill="#475569">{ walk now,</text>
+      <text x="455" y="112" text-anchor="middle" font-size="10" fill="#475569">mute slack 30m,</text>
+      <text x="455" y="126" text-anchor="middle" font-size="10" fill="#475569">schedule focus block,</text>
+      <text x="455" y="140" text-anchor="middle" font-size="10" fill="#475569">do-nothing &hellip; }</text>
+    </g>
+
+    <!-- Environment (user) -->
+    <g>
+      <rect x="580" y="60" width="140" height="90" rx="8" fill="#fef3c7" stroke="#b45309" stroke-width="1.8"/>
+      <text x="650" y="82" text-anchor="middle" font-size="13" font-weight="700" fill="#7c2d12">Environment</text>
+      <text x="650" y="100" text-anchor="middle" font-size="10" fill="#92400e">user acts (or doesn't);</text>
+      <text x="650" y="114" text-anchor="middle" font-size="10" fill="#92400e">signals flow in next hour</text>
+      <text x="650" y="134" text-anchor="middle" font-size="9" fill="#94a3b8" font-style="italic">= the real person</text>
+    </g>
+
+    <!-- Reward -->
+    <g>
+      <rect x="265" y="230" width="190" height="80" rx="8" fill="#ecfdf5" stroke="#059669" stroke-width="1.8"/>
+      <text x="360" y="252" text-anchor="middle" font-size="13" font-weight="700" fill="#065f46">Reward r&#7524;</text>
+      <text x="360" y="270" text-anchor="middle" font-size="10" fill="#064e3b">&Delta;E over next hour +</text>
+      <text x="360" y="284" text-anchor="middle" font-size="10" fill="#064e3b">&minus;&Delta;S + user's tap feedback</text>
+      <text x="360" y="302" text-anchor="middle" font-size="9" fill="#94a3b8" font-style="italic">measured from passive signals</text>
+    </g>
+
+    <!-- arrows s -> pi -->
+    <line x1="140" y1="105" x2="186" y2="105" stroke="#334155" stroke-width="1.6" marker-end="url(#arrG)"/>
+    <!-- pi -> a -->
+    <line x1="330" y1="105" x2="376" y2="105" stroke="#334155" stroke-width="1.6" marker-end="url(#arrG)"/>
+    <!-- a -> env -->
+    <line x1="530" y1="105" x2="576" y2="105" stroke="#334155" stroke-width="1.6" marker-end="url(#arrG)"/>
+    <!-- env -> reward (curve down) -->
+    <path d="M 650 150 C 650 195, 520 215, 455 230" fill="none" stroke="#334155" stroke-width="1.6" marker-end="url(#arrG)"/>
+    <!-- reward -> policy update (curve up-left) -->
+    <path d="M 265 270 C 180 270, 165 170, 220 148" fill="none" stroke="#059669" stroke-width="1.6" stroke-dasharray="5,3" marker-end="url(#arrG)"/>
+    <text x="150" y="220" font-size="10" fill="#059669" font-style="italic">policy update</text>
+    <!-- env -> new state (curve down-left) -->
+    <path d="M 585 140 C 440 160, 140 175, 70 150" fill="none" stroke="#475569" stroke-width="1.4" stroke-dasharray="3,3" marker-end="url(#arrG)"/>
+    <text x="345" y="180" font-size="10" fill="#475569" font-style="italic">next state s&#7524;&#8330;&#8321;</text>
+  </g>
+
+  <!-- ============================= RIGHT: LEARNING CURVE ============================= -->
+  <g transform="translate(60,320)">
+    <text x="0" y="0" font-size="12" font-weight="700" fill="#334155">As the policy learns: cumulative regret flattens</text>
+
+    <!-- axes -->
+    <line x1="0" y1="120" x2="440" y2="120" stroke="#475569" stroke-width="1.2"/>
+    <line x1="0" y1="15" x2="0" y2="120" stroke="#475569" stroke-width="1.2"/>
+    <text x="-8" y="20" text-anchor="end" font-size="10" fill="#64748b">high</text>
+    <text x="-8" y="122" text-anchor="end" font-size="10" fill="#64748b">low</text>
+    <text x="-42" y="70" font-size="11" text-anchor="middle" fill="#475569" transform="rotate(-90 -42 70)">avg regret</text>
+    <text x="0"   y="140" text-anchor="middle" font-size="10" fill="#64748b">week 1</text>
+    <text x="220" y="140" text-anchor="middle" font-size="10" fill="#64748b">week 6</text>
+    <text x="440" y="140" text-anchor="middle" font-size="10" fill="#64748b">week 12</text>
+
+    <!-- regret curve (log-shaped decay) -->
+    <path d="M 0 25 Q 80 50, 160 80 Q 240 100, 320 108 Q 400 113, 440 115"
+          fill="none" stroke="#2563eb" stroke-width="2.8" stroke-linecap="round"/>
+    <!-- early exploration variance -->
+    <g fill="#94a3b8" opacity="0.7">
+      <circle cx="10" cy="30" r="2"/><circle cx="25" cy="38" r="2"/><circle cx="45" cy="42" r="2"/>
+      <circle cx="70" cy="52" r="2"/><circle cx="95" cy="60" r="2"/><circle cx="120" cy="68" r="2"/>
+      <circle cx="150" cy="75" r="2"/><circle cx="180" cy="85" r="2"/>
+    </g>
+
+    <!-- annotation -->
+    <text x="40"  y="22" font-size="10" fill="#64748b" font-style="italic">exploration</text>
+    <text x="340" y="95" font-size="10" fill="#2563eb" font-style="italic">converged policy</text>
+  </g>
+
+  <g transform="translate(560,320)">
+    <text x="0" y="0" font-size="12" font-weight="700" fill="#334155">Why this is v3, not v1</text>
+    <g transform="translate(0,18)" font-size="10.5" fill="#475569">
+      <text x="0" y="14">&bull; Requires closed-loop interventions on-device</text>
+      <text x="0" y="30">&bull; Cold-start problem: first weeks = random nudges</text>
+      <text x="0" y="46">&bull; Reward spec is a design choice, not a science one</text>
+      <text x="0" y="62">&bull; Nudging raises autonomy-ethics questions (SDT)</text>
+      <text x="0" y="78">&bull; Best built on top of a stable Model B + E base</text>
+    </g>
+  </g>
+</svg>

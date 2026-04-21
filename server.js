@@ -1,20 +1,20 @@
-const express = require('express');
-const path = require('path');
+const express = require("express");
+const path = require("path");
 const app = express();
 
-app.use('/slides', express.static(path.join(__dirname, 'public', 'slides')));
-app.use('/figures', express.static(path.join(__dirname, 'public', 'figures')));
+app.use("/slides", express.static(path.join(__dirname, "public", "slides")));
+app.use("/figures", express.static(path.join(__dirname, "public", "figures")));
 
 // ─── Routes ───
-app.get('/', (req, res) => res.send(buildLanding()));
-app.get('/mccomb', (req, res) => res.send(buildMcComb()));
-app.get('/horwitz', (req, res) => res.send(buildHorwitz()));
-app.get('/ahmed', (req, res) => res.send(buildAhmed()));
-app.get('/sandbox', (req, res) => res.send(buildSandbox()));
+app.get("/", (req, res) => res.send(buildLanding()));
+app.get("/mccomb", (req, res) => res.send(buildMcComb()));
+app.get("/horwitz", (req, res) => res.send(buildHorwitz()));
+app.get("/ahmed", (req, res) => res.send(buildAhmed()));
+app.get("/sandbox", (req, res) => res.send(buildSandbox()));
 
 // ─── Shared CSS ───
 function getSharedCSS() {
-return `
+  return `
 :root {
   --bg: #fafaf9; --bg-card: #ffffff;
   --bg-hero: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
@@ -180,7 +180,7 @@ table.algo-matrix tr:hover { background:rgba(100,116,139,0.06); }
 
 // ─── Shared JS ───
 function getSharedJS() {
-return `
+  return `
 function toggleTheme(){var h=document.documentElement,n=h.getAttribute('data-theme')==='dark'?'light':'dark';h.setAttribute('data-theme',n);document.getElementById('themeIcon').textContent=n==='dark'?'\\u2600\\uFE0F':'\\uD83C\\uDF19';localStorage.setItem('theme',n)}
 (function(){var t=document.documentElement.getAttribute('data-theme');var i=document.getElementById('themeIcon');if(i)i.textContent=t==='dark'?'\\u2600\\uFE0F':'\\uD83C\\uDF19'})();
 function showSection(id,btn){document.querySelectorAll('.section').forEach(function(s){s.classList.remove('active')});document.querySelectorAll('.nav-tab').forEach(function(t){t.classList.remove('active')});document.getElementById('sec-'+id).classList.add('active');btn.classList.add('active');window.scrollTo({top:0,behavior:'smooth'})}
@@ -197,7 +197,7 @@ document.addEventListener('click',function(e){var a=e.target.closest('a[href^="#
 
 // ─── Page Wrapper ───
 function pageWrapper({ title, icon, body }) {
-return `<!DOCTYPE html>
+  return `<!DOCTYPE html>
 <html lang="en" data-theme="light">
 <head>
 <meta charset="UTF-8">
@@ -222,7 +222,10 @@ ${body}
 // LANDING PAGE
 // ═══════════════════════════════════════════════════
 function buildLanding() {
-return pageWrapper({ title: 'Research Hub', icon: '\uD83D\uDD2C', body: `
+  return pageWrapper({
+    title: "Research Hub",
+    icon: "\uD83D\uDD2C",
+    body: `
 <div class="hero">
   <h1>Research Hub</h1>
   <p class="subtitle">Detailed syntheses of research talks, papers, and ideas in AI, design, and machine learning</p>
@@ -272,7 +275,8 @@ return pageWrapper({ title: 'Research Hub', icon: '\uD83D\uDD2C', body: `
     </a>
   </div>
 </div>
-`});
+`,
+  });
 }
 
 // ═══════════════════════════════════════════════════
@@ -619,7 +623,8 @@ return pageWrapper({ title: 'McComb: AI & the Soul of Design', icon: '\uD83E\uDD
 
 </div>
 </div>
-`});
+`,
+  });
 }
 
 // ═══════════════════════════════════════════════════
@@ -833,14 +838,18 @@ return pageWrapper({ title: 'Eliahu Horwitz: Weight Space Learning', icon: '\uD8
 
 </div>
 </div>
-`});
+`,
+  });
 }
 
 // ═══════════════════════════════════════════════════
 // SANDBOX PAGE
 // ═══════════════════════════════════════════════════
 function buildSandbox() {
-return pageWrapper({ title: 'Psych_Battery: Systems Map & Prototyping', icon: '\uD83E\uDDEA', body: `
+  return pageWrapper({
+    title: "Psych_Battery: Systems Map & Prototyping",
+    icon: "\uD83E\uDDEA",
+    body: `
 <div class="hero" style="background:linear-gradient(135deg,#1a1a1a 0%,#2d1f0e 50%,#1a0a00 100%)">
   <h1>Psych_Battery</h1>
   <p class="subtitle">A physical desk object that tracks digital engagement and promotes analog recovery &mdash; systems map, display mechanisms, and prototyping plans</p>
@@ -1710,6 +1719,7 @@ CREATE TABLE score_5m     (ts INT PRIMARY KEY, E REAL, S REAL, F REAL, model TEX
 <h3 id="alg-a">Model A: Linear weighted sum with exponential decay</h3>
 <details class="section-fold"><summary>The simplest useful baseline &mdash; one scalar, fixed weights, exponential forgetting</summary>
 <div class="section-body">
+<div class="slide-fig"><img src="/figures/battery/model_a_linear.svg" alt="Model A: linear weighted sum with exponential decay, shown as a scored curve over a workday with drain and recover events" onclick="openLightbox(this)"><div class="caption">Model A: each event bumps the score; between events it decays. A single scalar, transparent but unaware of chronotype or stress accumulation.</div></div>
 <p><strong>Equation:</strong> <code>E(t) = E(t-&Delta;t) &middot; exp(-&Delta;t/&tau;) + &Sigma;<sub>i</sub> w<sub>i</sub> &middot; x<sub>i</sub>(t)</code></p>
 <p>where <code>&tau;</code> is a half-life (say 2 h), <code>x<sub>i</sub></code> are event magnitudes (meeting-minutes, walk-minutes, etc.), and <code>w<sub>i</sub></code> are signed weights (negative for drains, positive for restorers). Clipped to [0, 100].</p>
 
@@ -1788,6 +1798,7 @@ dS/dt = load(t)    &minus; &beta; &middot; detach(t)              # S has slow t
 <h3 id="alg-c">Model C: Allostatic load EMA</h3>
 <details class="section-fold"><summary>Stress-centric: a slow-moving exponential moving average of stressor load</summary>
 <div class="section-body">
+<div class="slide-fig"><img src="/figures/battery/model_c_allostatic.svg" alt="Model C: daily stressor-score bars over two weeks with a smooth exponential-moving-average curve overlaid" onclick="openLightbox(this)"><div class="caption">Model C: daily stressor scores (gray bars) feed a multi-day EMA (red line). A single bad day barely moves it; a bad week pushes it across the chronic-load threshold.</div></div>
 <p>A minimal version of the S-compartment alone. Useful if you want a single "am I heading for burnout" scalar without tracking short-term energy. Mechanism: multi-day EMA of a stressor vector &mdash; sleep debt, after-hours, video load, HRV trend, no-detachment days.</p>
 
 <pre class="code-block"><code>AL(t) = &lambda; &middot; AL(t&minus;1d) + (1&minus;&lambda;) &middot; stressor_score(t)
@@ -1825,6 +1836,7 @@ def update_score_D(E_obs, t, chronotype, features):
 <h3 id="alg-e">Model E: Multi-axis vector (E, S, F)</h3>
 <details class="section-fold"><summary>Three distinct scalars mapped to three distinct display features</summary>
 <div class="section-body">
+<div class="slide-fig"><img src="/figures/battery/model_e_vector.svg" alt="Model E: three stacked tracks showing Energy, Stress, and Fulfillment evolving independently across a workday, with a battery display decoding panel" onclick="openLightbox(this)"><div class="caption">Model E: three independent tracks across a workday. The right panel shows how E drives fill, S drives hue and pulse, and F drives the accent glow &mdash; one object, three channels.</div></div>
 <p>Grounded in Russell's circumplex + SDT + Progress Principle. Rather than collapse to one number, the state is a 3-vector &mdash; Energy, Stress, Fulfillment &mdash; each with its own update rule.</p>
 
 <pre class="code-block"><code>def update_vector_E(state, features, dt_min):
@@ -1855,6 +1867,7 @@ def display_decode(E, S, F):
 <h3 id="alg-f">Model F: Bayesian Kalman filter</h3>
 <details class="section-fold"><summary>Treat E and S as latent states; signals are noisy observations</summary>
 <div class="section-body">
+<div class="slide-fig"><img src="/figures/battery/model_f_kalman.svg" alt="Model F: Kalman filter showing noisy observations, a latent true-E curve, and the posterior mean with a shaded uncertainty band" onclick="openLightbox(this)"><div class="caption">Model F: a latent state with an explicit uncertainty band. The band widens when signals are sparse (no wearable, logged-off) and tightens when many sources agree.</div></div>
 <p>Treat E, S as latent states evolving per Model B's linear dynamics. Each signal (HRV, focus-minutes, meeting-density, etc.) is a noisy observation of a linear combination of E and S. Standard Kalman update gives a posterior + uncertainty.</p>
 
 <details class="code-fold"><summary>Numpy sketch</summary>
@@ -1879,6 +1892,7 @@ def kalman_update_F(x, P, z, A, H, Q, R):
 <h3 id="alg-g">Model G: RL / contextual bandit (speculative)</h3>
 <details class="section-fold"><summary>Let the device learn which interventions actually restore <em>this user's</em> energy</summary>
 <div class="section-body">
+<div class="slide-fig"><img src="/figures/battery/model_g_rl.svg" alt="Model G: contextual-bandit loop with state, policy, action, environment, reward, and a regret curve flattening over twelve weeks" onclick="openLightbox(this)"><div class="caption">Model G: the classic RL loop adapted to this domain. Actions are nudges; reward is downstream energy change. Regret falls slowly as the policy learns which interventions actually work for this particular user.</div></div>
 <p>Concept: after N weeks of data, train a contextual-bandit policy that suggests interventions ("take a walk now"? "close Slack for 30 min"?) and observes downstream E-axis change as reward. Interventions are arms; context is the current state vector.</p>
 <p><strong>Pros:</strong> per-user personalization without asking the user anything. In principle, the device gets smarter the longer you own it.</p>
 <p><strong>Cons:</strong> only honest if we have a closed intervention loop on the device (nudge &rarr; behavior &rarr; measured change). Also ethically loaded &mdash; nudging is a design decision, not a data-science decision.</p>
@@ -4049,7 +4063,8 @@ RECHARGE_IDLE_PER_MIN = <span class="num">0.4</span>    <span class="cmt"># AFK/
 </div>
 
 </div>
-`});
+`,
+  });
 }
 
 // ═══════════════════════════════════════════════════
@@ -4295,6 +4310,6 @@ return pageWrapper({ title: 'Faez Ahmed: AI-Driven Engineering Design', icon: '\
 // ─── Server ───
 if (!process.env.VERCEL) {
   const PORT = process.env.PORT || 3000;
-  app.listen(PORT, () => console.log('http://localhost:' + PORT));
+  app.listen(PORT, () => console.log("http://localhost:" + PORT));
 }
 module.exports = app;
