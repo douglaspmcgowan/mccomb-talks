@@ -59,7 +59,11 @@ def normalize(
     context_switches = _first(aw.get("aw_context_switches"))
     focus_block_min  = _first(aw.get("aw_focus_block_min"))
     afk_10plus_min   = _first(aw.get("aw_afk_10plus_min"))
-    detach_block_min = _first(aw.get("aw_detach_block_min"))
+    # detach combines AW-detected ≥60-min AFK blocks with any manual /log detach entries.
+    detach_block_min = (
+        _first(aw.get("aw_detach_block_min"))
+        + _first(rl.get("detach_log_min"))
+    )
     # fragmentation: stddev(session length) / personal baseline − 1
     frag_raw = _first(aw.get("aw_fragmentation_stddev"))
     frag_base = baseline.get("fragmentation_stddev_baseline", 10.0)  # minutes
@@ -85,8 +89,12 @@ def normalize(
     outside_log_min  = _first(rl.get("outside_log_min"))
     walk_outside_min = _first(rl.get("walk_outside_min"))
 
-    # ── Proximity (BLE) ──
-    with_people_min = _first(pr.get("with_people_min"))
+    # ── Proximity (BLE) + manual /log with_people entries ──
+    # Both are "time with someone": BLE beacons when present, manual log otherwise.
+    with_people_min = (
+        _first(pr.get("with_people_min"))
+        + _first(rl.get("with_people_log_min"))
+    )
 
     # ── Todoist ──
     todoist_overdue = _first(td.get("todoist_overdue_count"))

@@ -83,9 +83,12 @@ def fetch_recent(since: dt.datetime, until: dt.datetime) -> dict[str, Any]:
         app = e.data.get("app", "")
         dur = float(e.duration.total_seconds()) if hasattr(e.duration, "total_seconds") else float(e.duration)
         if app != last_app:
-            if last_app is not None and current_app_start_sec > 0:
-                session_lengths_sec.append(current_app_start_sec)
-            context_switches += 1
+            # Only count as a switch if there was a previous app — otherwise the
+            # first event of any window would count as a false context switch.
+            if last_app is not None:
+                if current_app_start_sec > 0:
+                    session_lengths_sec.append(current_app_start_sec)
+                context_switches += 1
             current_app_start_sec = dur
             last_app = app
         else:

@@ -262,6 +262,16 @@ def main() -> None:
     load_secrets()
     log.info("Psych Battery starting. State dir: %s", STATE_DIR)
 
+    # Start BLE proximity scanner if configured (no-op if config.yaml missing).
+    # This is what keeps proximity-log.jsonl populated; without it,
+    # receiver.fetch_recent() always returns with_people_min=0.
+    try:
+        from integrations.proximity.receiver import start_scanner as _start_prox
+        _start_prox()
+        log.info("BLE proximity scanner started (if any beacons configured).")
+    except Exception as e:
+        log.warning("Proximity scanner not started: %s", e)
+
     # Start the tick loop in a thread
     t = threading.Thread(target=tick_loop, daemon=True, name="tick-loop")
     t.start()
