@@ -283,7 +283,10 @@ function buildLanding() {
 // McCOMB PAGE
 // ═══════════════════════════════════════════════════
 function buildMcComb() {
-return pageWrapper({ title: 'McComb: AI & the Soul of Design', icon: '\uD83E\uDDE0', body: `
+  return pageWrapper({
+    title: "McComb: AI & the Soul of Design",
+    icon: "\uD83E\uDDE0",
+    body: `
 <div class="editorial">
 <style>
 .editorial{--paper:#FBF8F1;--ink:#1C1712;--ink-soft:#4a3f33;--rule:#d8cfbd;--accent-ed:#A62B1F;--accent-ed-soft:#c6584e;background:var(--paper);color:var(--ink);font-family:'Source Serif 4','Source Serif Pro',Georgia,serif;line-height:1.7;position:relative;min-height:100vh;}
@@ -631,7 +634,10 @@ return pageWrapper({ title: 'McComb: AI & the Soul of Design', icon: '\uD83E\uDD
 // HORWITZ PAGE
 // ═══════════════════════════════════════════════════
 function buildHorwitz() {
-return pageWrapper({ title: 'Eliahu Horwitz: Weight Space Learning', icon: '\uD83E\uDDE0', body: `
+  return pageWrapper({
+    title: "Eliahu Horwitz: Weight Space Learning",
+    icon: "\uD83E\uDDE0",
+    body: `
 <div class="editorial">
 <style>
 .editorial{--paper:#FBF8F1;--ink:#1C1712;--ink-soft:#4a3f33;--rule:#d8cfbd;--accent-ed:#1F4E8C;--accent-ed-soft:#5d84b5;background:var(--paper);color:var(--ink);font-family:'Source Serif 4','Source Serif Pro',Georgia,serif;line-height:1.7;position:relative;min-height:100vh;}
@@ -863,6 +869,7 @@ function buildSandbox() {
   <button class="nav-tab" onclick="showSection('salgorithm',this)">Scoring Algorithms</button>
   <button class="nav-tab" onclick="showSection('sledguide',this)">LED Build</button>
   <button class="nav-tab" onclick="showSection('seinkguide',this)">E-Ink Build</button>
+  <button class="nav-tab" onclick="showSection('scrowpanel',this)">CrowPanel Build</button>
 </div></nav>
 <div class="container">
 <a href="/" class="back-link">&larr; Research Hub</a>
@@ -4062,6 +4069,545 @@ RECHARGE_IDLE_PER_MIN = <span class="num">0.4</span>    <span class="cmt"># AFK/
 </details>
 </div>
 
+<!-- ===== CROWPANEL BUILD GUIDE ===== -->
+<div class="section" id="sec-scrowpanel">
+<h2>CrowPanel ESP32-S3 5.79" E-Ink (B/W): Complete Build Guide</h2>
+<p>A parallel build path using the <strong>ELECROW CrowPanel ESP32 5.79" E-Paper HMI</strong> &mdash; a single all-in-one board that integrates the same Good Display 5.79" 272&times;792 panel directly onto an ESP32-S3 carrier PCB. No DESPI-C579 adapter, no breadboard, no ribbon-cable handling. The trade-off: B/W only (no yellow/red), so the charge bar uses size and inversion for alert zones instead of color.</p>
+
+<div class="callout"><div class="label">Why a second e-ink build</div><p>The existing <strong>E-Ink Build</strong> uses the Good Display <em>ESP32-L(C579) kit</em> &mdash; three boards you plug together (ESP32-L motherboard + DESPI-C579 connector + GDEY0579F52 panel + ribbon cable). This build uses the <em>ELECROW CrowPanel</em>, which takes the same 5.79" panel and fuses it onto a single carrier PCB with an ESP32-S3. Both drive physically identical Good Display glass; pick whichever board you actually bought. If you ordered the CrowPanel from Amazon (ASIN B0FX4PDW6M), follow this guide. If you ordered the Good Display kit from buy-lcd.com / buyepaper.com, follow the E-Ink Build tab.</p></div>
+
+<details class="section-fold"><summary>Table of Contents</summary>
+<div class="section-body">
+<div class="toc"><ul>
+  <li><a href="#cp-why">Why CrowPanel vs. Good Display Kit</a></li>
+  <li><a href="#cp-bom">Phase 0: What's In The Box</a></li>
+  <li><a href="#cp-software">Phase 1: Software Setup (Arduino IDE + ESP32-S3 + EPD Library)</a></li>
+  <li><a href="#cp-hardware">Phase 2: Hardware (Just Plug In USB-C)</a></li>
+  <li><a href="#cp-firsttest">Phase 3: First Upload &amp; Smoke Test</a></li>
+  <li><a href="#cp-chargecode">Phase 4: The B/W Charge Bar Firmware</a></li>
+  <li><a href="#cp-python">Phase 5: Python Backend (reuses charge_sender.py)</a></li>
+  <li><a href="#cp-enclosure">Phase 6: Enclosure Notes</a></li>
+  <li><a href="#cp-troubleshooting">Troubleshooting Guide</a></li>
+</ul></div>
+</div>
+</details>
+
+<details class="section-fold" id="cp-why"><summary>Why CrowPanel vs. Good Display Kit?</summary>
+<div class="section-body">
+<ul class="findings">
+  <li><strong>One board, not three.</strong> The ESP32-S3, the SPI wiring, and the panel are all on the same PCB. No DESPI-C579 adapter to misseat, no ribbon cable to flip backwards, no motherboard pairing.</li>
+  <li><strong>USB-C, not Micro-USB.</strong> Modern cable, reversible, more common in 2026.</li>
+  <li><strong>ESP32-S3 with 8&nbsp;MB PSRAM.</strong> More headroom for double-buffering, OTA, or future upgrades to a larger panel.</li>
+  <li><strong>SH1.0 LiPo connector built in.</strong> Drop-in battery for cord-free operation; no soldering a JST pigtail.</li>
+  <li><strong>TF card slot.</strong> Useful for logging charge history offline, or loading bitmap assets without re-flashing.</li>
+  <li><strong>Same Good Display panel.</strong> Good Display is the OEM of the 5.79" 272&times;792 glass. Visually identical to the F52 panel in the kit build &mdash; just the driver layer and B/W vs. 4-color differ.</li>
+</ul>
+
+<div class="callout"><div class="label">Known trade-off: B/W only, no color zones</div><p>The CrowPanel panel variant is black &amp; white only (driven by dual SSD1683 ICs). You lose the yellow-&rarr;red color transition that marked the "danger zone" in the 4-color build. We compensate by (1) doubling the font size of the percentage in the low-charge zone and (2) inverting the fill (black body, white text) when charge drops below 20%. That gives the same peripheral "something's wrong" signal without a hue channel. If color zones matter to you, stay on the Good Display F52 build.</p></div>
+</div>
+</details>
+
+<!-- ============ PHASE 0: SUPPLIES ============ -->
+<div class="phase-header"><span class="phase-num">0</span><span class="phase-title">What's In The Box</span><span class="phase-time">5 min (inventory)</span></div>
+
+<details class="section-fold" id="cp-bom"><summary>0.1 What ships with the CrowPanel</summary>
+<div class="section-body">
+<table class="result-table">
+<tr><th>Item</th><th>What It Is</th><th>Replaces (vs. kit build)</th></tr>
+<tr><td><strong>CrowPanel ESP32-S3 5.79" E-Paper</strong></td><td>All-in-one carrier: ESP32-S3-WROOM-1-N8R8 (8MB flash / 8MB PSRAM, WiFi + BLE) pre-wired via SPI to the 5.79" 272&times;792 B/W e-paper panel through dual SSD1683 drivers. Includes RESET / BOOT / Menu / Back buttons, a dial switch, TF card slot, and an SH1.0-2P LiPo connector.</td><td>ESP32-L motherboard + DESPI-C579 connector + GDEY0579F52 panel + ribbon cable (4 parts &rarr; 1 board)</td></tr>
+<tr><td><strong>USB-C cable</strong></td><td>Power and programming.</td><td>Micro-USB cable</td></tr>
+<tr><td><strong>Acrylic standoffs / feet</strong> (usually)</td><td>Lets the board stand on a desk without shorting traces.</td><td>n/a</td></tr>
+</table>
+
+<p>That's the whole build from the electronics side. Everything else on the bill of materials (filament, VHB tape, IPA, sandpaper, screws) is identical to the <a href="#sec-seinkguide">E-Ink Build's Phase 0.2</a> &mdash; reuse that list verbatim.</p>
+
+<div class="callout"><div class="label">Verify the ASIN before you buy</div><p>ELECROW sells several CrowPanel variants (2.13", 4.2", 5.79", plus color LCD models). Only the 5.79" e-paper model matches this guide. The Amazon listing you used was <strong>B0FX4PDW6M</strong>, which resolves to the 272&times;792 B/W panel. If you see "IPS", "TFT", or "Touch" in the title, it's the wrong product.</p></div>
+</div>
+</details>
+
+<!-- ============ PHASE 1: SOFTWARE ============ -->
+<div class="phase-header"><span class="phase-num">1</span><span class="phase-title">Software Setup (Arduino IDE + ESP32-S3 + EPD Library)</span><span class="phase-time">30 min</span></div>
+
+<details class="section-fold" id="cp-software"><summary>1.1 Install Arduino IDE 2.x &amp; ESP32 Board Support</summary>
+<div class="section-body">
+<p>Identical to Phase 1.1&ndash;1.2 of the E-Ink Build &mdash; install Arduino IDE 2.x from <a href="https://www.arduino.cc/en/software" target="_blank">arduino.cc/en/software</a>, then add the Espressif boards URL (<code>https://espressif.github.io/arduino-esp32/package_esp32_index.json</code>) in Preferences and install "esp32 by Espressif Systems" via Boards Manager. Use version 3.x or higher &mdash; the S3 needs it.</p>
+</div>
+</details>
+
+<details class="section-fold"><summary>1.2 Board Settings for the ESP32-S3 (different from the kit build)</summary>
+<div class="section-body">
+<p>The CrowPanel uses an ESP32-S3, not a plain ESP32. Board settings matter here &mdash; getting them wrong causes silent boot loops.</p>
+<ul class="findings">
+  <li><strong>Tools &rarr; Board &rarr; ESP32 Arduino &rarr; ESP32S3 Dev Module</strong> (not "ESP32 Dev Module")</li>
+  <li><strong>Tools &rarr; Partition Scheme &rarr; Huge APP (3MB No OTA / 1MB SPIFFS)</strong></li>
+  <li><strong>Tools &rarr; PSRAM &rarr; OPI PSRAM</strong> (this enables the 8&nbsp;MB of PSRAM &mdash; without it, framebuffer allocation can fail)</li>
+  <li><strong>Tools &rarr; Flash Size &rarr; 8MB (64Mb)</strong></li>
+  <li><strong>Tools &rarr; Flash Mode &rarr; QIO 80MHz</strong></li>
+  <li><strong>Tools &rarr; Upload Speed &rarr; 921600</strong> (drop to 460800 if uploads fail)</li>
+  <li><strong>Tools &rarr; USB CDC On Boot &rarr; Enabled</strong> (lets the Serial Monitor talk over the native USB-C without a CP2102 driver)</li>
+</ul>
+
+<div class="callout"><div class="label">Why USB CDC On Boot matters</div><p>The CrowPanel uses the ESP32-S3's native USB peripheral, not a CP2102 USB-to-serial chip (like the older ESP32 DevKit or the ESP32-L). You do <strong>not</strong> need the Silicon Labs driver. But if "USB CDC On Boot" is disabled, the Serial Monitor won't see any output even though uploads work &mdash; which is a confusing failure mode. Turn it on once and forget it.</p></div>
+
+<details class="build-help"><summary>If upload hangs at "Connecting..." &mdash; boot-mode entry</summary><div class="help-body">
+<p>The ESP32-S3 sometimes doesn't auto-enter flash mode on first upload after power-up. Manual entry:</p>
+<ol>
+  <li>Hold the <strong>BOOT</strong> button.</li>
+  <li>While holding BOOT, press and release the <strong>RESET</strong> button.</li>
+  <li>Release BOOT. Board is now in download mode (Serial shows "Waiting for download").</li>
+  <li>Click Upload. Once "Writing at..." appears, the board will reset itself on completion.</li>
+</ol>
+<p>Subsequent uploads usually auto-enter and you won't need this dance again.</p>
+</div></details>
+</div>
+</details>
+
+<details class="section-fold"><summary>1.3 Download ELECROW's CrowPanel Library</summary>
+<div class="section-body">
+<p>ELECROW provides a custom <code>EPD.h</code> library tuned for the dual-SSD1683 layout of this panel. Stock <code>GxEPD2</code> will <strong>only drive half the screen</strong> &mdash; use ELECROW's library.</p>
+<ul class="findings">
+  <li>Go to <a href="https://github.com/Elecrow-RD/CrowPanel-ESP32-5.79-E-paper-HMI-Display-with-272-792" target="_blank">github.com/Elecrow-RD/CrowPanel-ESP32-5.79-E-paper-HMI-Display-with-272-792</a></li>
+  <li>Click <strong>Code &rarr; Download ZIP</strong></li>
+  <li>Unzip. Navigate into the <code>example/</code> folder &mdash; each example is its own self-contained Arduino sketch with <code>EPD.h</code> / <code>EPD.cpp</code> / <code>GUI_Paint.h</code> / <code>GUI_Paint.cpp</code> / font headers alongside the <code>.ino</code>.</li>
+  <li>Open one of the example <code>.ino</code> files (e.g. <code>Display_Picture</code>) in Arduino IDE. If it asks to move into a correctly named folder, click yes.</li>
+</ul>
+
+<div class="callout"><div class="label">No global Library install</div><p>Unlike Adafruit_GFX or ArduinoJson, you do <em>not</em> install <code>EPD.h</code> via Library Manager. ELECROW's pattern is to keep the library source files in each sketch folder. That's ugly but works; it also means you can safely hack on the library per-sketch without breaking other projects.</p></div>
+
+<details class="build-help"><summary>Community alternatives (optional)</summary><div class="help-body">
+<p>If you prefer a more mainstream driver stack, two community ports exist:</p>
+<ul>
+  <li><strong>ESPHome custom driver</strong> &mdash; <a href="https://community.home-assistant.io/t/esphome-custom-driver-for-elecrow-crowpanel-5-79-e-paper-display-dis08792e-dual-ssd1683-lvgl-working-partial-refresh/1005479" target="_blank">Home Assistant forum thread</a>. Gives you YAML-configured LVGL and partial refresh for a Home Assistant integration.</li>
+  <li><strong>GxEPD2 dual-driver fork</strong> &mdash; documented in <a href="https://bukys.eu/blog/250105_my_love-hate_relationship_with_the_elecrow_crowpanel_5.79_e-paper_display" target="_blank">Ignas Bukys's blog post</a>. Lets you reuse GxEPD2/Adafruit_GFX code from other e-paper projects.</li>
+  <li><strong>MicroPython library</strong> &mdash; <a href="https://github.com/omiq/crowpanel" target="_blank">github.com/omiq/crowpanel</a>. If Python is more natural than C++.</li>
+</ul>
+<p>The firmware below uses ELECROW's native <code>EPD.h</code> because it's the best-documented path and the one their examples use. If you want to port to GxEPD2 later, the <code>drawChargeBar</code> function is library-agnostic drawing primitives and will port with minimal changes.</p>
+</div></details>
+</div>
+</details>
+
+<!-- ============ PHASE 2: HARDWARE ============ -->
+<div class="phase-header"><span class="phase-num">2</span><span class="phase-title">Hardware (Just Plug In USB-C)</span><span class="phase-time">2 min</span></div>
+
+<details class="section-fold" id="cp-hardware"><summary>2.1 Connect USB-C and verify</summary>
+<div class="section-body">
+<ul class="findings">
+  <li>Plug the included USB-C cable into the port on the CrowPanel's edge, and the other end into your computer.</li>
+  <li>The power LED on the board should light up.</li>
+  <li>Arduino IDE &rarr; <strong>Tools &rarr; Port</strong>: a new port should appear within 2 seconds (COM3+ on Windows, <code>/dev/cu.usbmodem*</code> on macOS, <code>/dev/ttyACM0</code> on Linux). Select it.</li>
+</ul>
+
+<div class="callout"><div class="label">What you're NOT doing</div><p>No ribbon cable to seat. No DESPI-C579 to press into a socket. No breadboard. No jumper wires. No orientation tricks. The whole hardware phase is one cable. Total time: 2 minutes versus ~30 minutes for the kit build.</p></div>
+</div>
+</details>
+
+<details class="section-fold"><summary>2.2 Reference: onboard GPIO mapping (don't change these)</summary>
+<div class="section-body">
+<p>The display signals are hardwired on the PCB to specific GPIOs. The library <code>EPD.h</code> already knows about these &mdash; you won't edit them &mdash; but they're documented here in case you add external sensors and need to know which pins are taken.</p>
+
+<table class="result-table">
+<tr><th>Signal</th><th>ESP32-S3 GPIO</th></tr>
+<tr><td>SCK (SPI clock)</td><td>GPIO 12</td></tr>
+<tr><td>MOSI (SPI data)</td><td>GPIO 11</td></tr>
+<tr><td>CS (chip select)</td><td>GPIO 45</td></tr>
+<tr><td>DC (data / command)</td><td>GPIO 46</td></tr>
+<tr><td>RES (reset)</td><td>GPIO 47</td></tr>
+<tr><td>BUSY</td><td>GPIO 48</td></tr>
+</table>
+
+<p>Free GPIOs (verify against the board's schematic before wiring anything): typically GPIO 1&ndash;10 and 17&ndash;21 are available on the 2&times;10 expansion header for sensors, LEDs, or the color-change layer discussed in the Tech Stack tab.</p>
+</div>
+</details>
+
+<!-- ============ PHASE 3: FIRST TEST ============ -->
+<div class="phase-header"><span class="phase-num">3</span><span class="phase-title">First Upload &amp; Smoke Test</span><span class="phase-time">10 min</span></div>
+
+<details class="section-fold" id="cp-firsttest"><summary>3.1 Upload the stock Display_Picture example</summary>
+<div class="section-body">
+<p>Before writing your own code, confirm the library, board settings, and USB connection all work. The ELECROW repo ships a <code>Display_Picture</code> example that just draws the company logo.</p>
+<ul class="findings">
+  <li>In the library ZIP you extracted, open <code>example/Display_Picture/Display_Picture.ino</code> in Arduino IDE.</li>
+  <li>Confirm Tools &rarr; Board says <strong>ESP32S3 Dev Module</strong> and the other settings from Phase 1.2 are all set.</li>
+  <li>Confirm Tools &rarr; Port is set to the CrowPanel's port.</li>
+  <li>Click <strong>Upload</strong> (right-arrow icon). First compile is slow (~2&ndash;3 min while the ESP32-S3 toolchain builds its cache).</li>
+  <li>Once "Hard resetting via RTS pin..." appears, the display will flash black/white a few times, then show the ELECROW logo in B/W.</li>
+</ul>
+
+<div class="callout"><div class="label">Expected refresh sequence</div><p>Full refresh is jarring but normal:
+<br><br>
+1. <strong>Black</strong> for ~2 s<br>
+2. <strong>White</strong> for ~2 s<br>
+3. One or two more black/white flashes (the controller is clearing particle state)<br>
+4. Final image appears in crisp B/W<br>
+5. Image stays on screen even after USB unplug &mdash; that's e-ink persistence</p>
+<p>Total time: ~8 s for full refresh. Partial refresh (used in the firmware below) is ~300 ms and doesn't flash.</p></div>
+</div>
+</details>
+
+<details class="section-fold"><summary>3.2 If the display stays blank or half-drawn</summary>
+<div class="section-body">
+<ul class="findings">
+  <li><strong>Blank screen, upload succeeded:</strong> most likely the partition scheme or PSRAM setting is wrong &mdash; go back to Phase 1.2 and check every Tools menu entry. PSRAM set to "Disabled" is the #1 cause.</li>
+  <li><strong>Only half the panel draws:</strong> you loaded code written for a single-SSD1683 panel. Make sure you're using ELECROW's <code>EPD.h</code> (dual-driver), not GxEPD2 or a generic Waveshare driver.</li>
+  <li><strong>Garbled / snowy image:</strong> SPI clock mismatch. Lower upload speed in Tools, re-flash, then check if it persists on the final image (if yes, a library bug &mdash; file an issue on the repo).</li>
+  <li><strong>No serial output but upload worked:</strong> "USB CDC On Boot" is disabled. Turn it on in Tools and re-upload.</li>
+</ul>
+</div>
+</details>
+
+<!-- ============ PHASE 4: COMPLETE FIRMWARE ============ -->
+<div class="phase-header"><span class="phase-num">4</span><span class="phase-title">The B/W Charge Bar Firmware</span><span class="phase-time">1.5 hours</span></div>
+
+<details class="section-fold" id="cp-chargecode"><summary>4.1 What this firmware does (and how B/W changes things)</summary>
+<div class="section-body">
+<p>The firmware is structurally the same as the 4-color build &mdash; WiFi HTTP server on port 80, <code>POST /charge</code> with JSON, 0&ndash;100 mapped to a battery bar &mdash; but the visual design changes because we lose color zones:</p>
+<ul class="findings">
+  <li><strong>&ge; 20% charge:</strong> normal mode &mdash; black outline, black-filled proportional bar, black percentage text on white.</li>
+  <li><strong>&lt; 20% charge:</strong> alert mode &mdash; whole panel inverted (black background), oversized percentage in bold white, "RECHARGE" label. The sudden contrast shift is the peripheral "something's wrong" signal that used to be handled by the red fill.</li>
+  <li><strong>At 0%:</strong> a stippled diagonal hatch across the empty bar body reinforces "dead," visible from across a room.</li>
+</ul>
+
+<details class="build-help"><summary>Why size + inversion instead of dithered "gray"</summary><div class="help-body">
+<p>Dual-SSD1683 B/W panels <em>can</em> render faux-gray via spatial dithering (half-tone patterns), but (1) dithered gray looks grainy at reading distance and (2) partial refresh on dithered regions ghosts faster. Step-changes in contrast (black/white flip) are what e-ink does best. Leaning into that instead of fighting it gives a cleaner peripheral signal than a gradient ever would on this panel.</p>
+</div></details>
+</div>
+</details>
+
+<details class="section-fold"><summary>4.2 The main Arduino sketch</summary>
+<div class="section-body">
+<p>Create a new sketch folder called <code>psych_battery_crowpanel/</code> and copy the library source files (<code>EPD.h</code>, <code>EPD.cpp</code>, <code>GUI_Paint.h</code>, <code>GUI_Paint.cpp</code>, font headers) from one of the ELECROW example folders into it. Then save this as <code>psych_battery_crowpanel.ino</code>:</p>
+
+<details class="build-help"><summary>What goes in the sketch folder</summary><div class="help-body">
+<details class="code-fold"><summary>psych_battery_crowpanel/</summary>
+<pre class="code-block">psych_battery_crowpanel/
+├── psych_battery_crowpanel.ino   &larr; your main sketch (below)
+├── EPD.h
+├── EPD.cpp
+├── GUI_Paint.h
+├── GUI_Paint.cpp
+├── Debug.h
+├── fonts.h                       &larr; or individual font*.c files, depending on release
+└── (optional) ImageData.h        &larr; only if you display bitmaps</pre>
+</details>
+<p>Use <strong>Sketch &rarr; Show Sketch Folder</strong> to open the folder, then copy files in from the ELECROW ZIP's <code>example/</code> subdirectory. Restart Arduino IDE afterward so the tabs refresh.</p>
+</div></details>
+
+<details class="code-fold"><summary>psych_battery_crowpanel.ino &mdash; main firmware</summary>
+<pre class="code-block"><span class="cmt">/*
+ * Psych_Battery CrowPanel Firmware (B/W variant)
+ * Hardware: ELECROW CrowPanel ESP32-S3 5.79" E-Paper (dual SSD1683, 272x792 B/W)
+ * Receives charge level (0-100) via WiFi HTTP or Serial
+ * Displays a B/W battery bar; inverts display below 20% as the alert zone.
+ */</span>
+
+<span class="kw">#include</span> <span class="str">&lt;WiFi.h&gt;</span>
+<span class="kw">#include</span> <span class="str">&lt;WebServer.h&gt;</span>
+<span class="kw">#include</span> <span class="str">&lt;ArduinoJson.h&gt;</span>
+<span class="kw">#include</span> <span class="str">"EPD.h"</span>
+<span class="kw">#include</span> <span class="str">"GUI_Paint.h"</span>
+
+<span class="cmt">// ============ CONFIG - EDIT THESE ============</span>
+<span class="kw">const</span> <span class="ty">char</span>* WIFI_SSID     = <span class="str">"YourWiFiName"</span>;
+<span class="kw">const</span> <span class="ty">char</span>* WIFI_PASSWORD = <span class="str">"YourWiFiPassword"</span>;
+<span class="kw">const</span> <span class="ty">int</span>   HTTP_PORT     = <span class="num">80</span>;
+<span class="kw">const</span> <span class="ty">int</span>   ALERT_THRESHOLD = <span class="num">20</span>;  <span class="cmt">// below this, invert the display</span>
+
+<span class="cmt">// Display dimensions (CrowPanel 5.79" B/W landscape)</span>
+<span class="kw">#define</span> EPD_W <span class="num">792</span>
+<span class="kw">#define</span> EPD_H <span class="num">272</span>
+
+<span class="cmt">// Framebuffer: 1 bit per pixel x 792 x 272 = 26,928 bytes (round to 27000)</span>
+<span class="ty">UBYTE</span> ImageBW[<span class="num">27000</span>];
+
+<span class="ty">WebServer</span> server(HTTP_PORT);
+<span class="ty">int</span>  currentCharge   = <span class="num">100</span>;
+<span class="ty">int</span>  refreshCount    = <span class="num">0</span>;
+<span class="ty">bool</span> needsRedraw     = <span class="kw">true</span>;
+<span class="ty">bool</span> lastWasInverted = <span class="kw">false</span>;
+
+<span class="cmt">// ============ SETUP ============</span>
+<span class="ty">void</span> <span class="fn">setup</span>() {
+  Serial.begin(<span class="num">115200</span>);
+  delay(<span class="num">500</span>);
+  Serial.println(<span class="str">"\nPsych_Battery CrowPanel starting..."</span>);
+
+  <span class="cmt">// Init display hardware (SPI + control pins)</span>
+  EPD_GPIOInit();
+  EPD_Init();                 <span class="cmt">// full refresh init</span>
+  EPD_Clear(<span class="num">0xFF</span>);             <span class="cmt">// white</span>
+  Paint_NewImage(ImageBW, EPD_W, EPD_H, <span class="num">0</span>, WHITE);
+  Paint_Clear(WHITE);
+  drawChargeBar(currentCharge);
+  EPD_Display(ImageBW);
+  EPD_DeepSleep();
+
+  <span class="cmt">// Connect to WiFi</span>
+  WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
+  Serial.print(<span class="str">"Connecting to WiFi"</span>);
+  <span class="ty">int</span> retries = <span class="num">0</span>;
+  <span class="kw">while</span> (WiFi.status() != WL_CONNECTED && retries &lt; <span class="num">20</span>) {
+    delay(<span class="num">500</span>);
+    Serial.print(<span class="str">"."</span>);
+    retries++;
+  }
+  <span class="kw">if</span> (WiFi.status() == WL_CONNECTED) {
+    Serial.print(<span class="str">"\nConnected! IP: "</span>);
+    Serial.println(WiFi.localIP());
+  } <span class="kw">else</span> {
+    Serial.println(<span class="str">"\nWiFi failed. Running serial-only mode."</span>);
+  }
+
+  <span class="cmt">// HTTP endpoints</span>
+  server.on(<span class="str">"/charge"</span>, HTTP_POST, handleChargePost);
+  server.on(<span class="str">"/charge"</span>, HTTP_GET,  handleChargeGet);
+  server.on(<span class="str">"/"</span>, []() {
+    server.send(<span class="num">200</span>, <span class="str">"text/plain"</span>,
+      <span class="str">"Psych_Battery (CrowPanel B/W) ready. POST /charge with JSON {\"level\": 0-100}"</span>);
+  });
+  server.begin();
+  Serial.println(<span class="str">"HTTP server on port 80"</span>);
+}
+
+<span class="cmt">// ============ LOOP ============</span>
+<span class="ty">void</span> <span class="fn">loop</span>() {
+  server.handleClient();
+  handleSerialInput();
+  <span class="kw">if</span> (needsRedraw) {
+    redrawDisplay();
+    needsRedraw = <span class="kw">false</span>;
+  }
+}
+
+<span class="cmt">// ============ HTTP HANDLERS (identical to e-ink build) ============</span>
+<span class="ty">void</span> <span class="fn">handleChargePost</span>() {
+  <span class="kw">if</span> (!server.hasArg(<span class="str">"plain"</span>)) {
+    server.send(<span class="num">400</span>, <span class="str">"text/plain"</span>, <span class="str">"Missing JSON body"</span>); <span class="kw">return</span>;
+  }
+  <span class="ty">JsonDocument</span> doc;
+  <span class="ty">DeserializationError</span> err = deserializeJson(doc, server.arg(<span class="str">"plain"</span>));
+  <span class="kw">if</span> (err) { server.send(<span class="num">400</span>, <span class="str">"text/plain"</span>, <span class="str">"Invalid JSON"</span>); <span class="kw">return</span>; }
+  <span class="ty">int</span> level = doc[<span class="str">"level"</span>] | -<span class="num">1</span>;
+  <span class="kw">if</span> (level &lt; <span class="num">0</span> || level &gt; <span class="num">100</span>) {
+    server.send(<span class="num">400</span>, <span class="str">"text/plain"</span>, <span class="str">"level must be 0-100"</span>); <span class="kw">return</span>;
+  }
+  setCharge(level);
+  server.send(<span class="num">200</span>, <span class="str">"application/json"</span>,
+    <span class="str">"{\"ok\":true,\"level\":"</span> + String(level) + <span class="str">"}"</span>);
+}
+
+<span class="ty">void</span> <span class="fn">handleChargeGet</span>() {
+  <span class="kw">if</span> (!server.hasArg(<span class="str">"level"</span>)) {
+    server.send(<span class="num">200</span>, <span class="str">"application/json"</span>,
+      <span class="str">"{\"level\":"</span> + String(currentCharge) + <span class="str">"}"</span>); <span class="kw">return</span>;
+  }
+  <span class="ty">int</span> level = server.arg(<span class="str">"level"</span>).toInt();
+  <span class="kw">if</span> (level &lt; <span class="num">0</span> || level &gt; <span class="num">100</span>) {
+    server.send(<span class="num">400</span>, <span class="str">"text/plain"</span>, <span class="str">"level must be 0-100"</span>); <span class="kw">return</span>;
+  }
+  setCharge(level);
+  server.send(<span class="num">200</span>, <span class="str">"application/json"</span>,
+    <span class="str">"{\"ok\":true,\"level\":"</span> + String(level) + <span class="str">"}"</span>);
+}
+
+<span class="ty">void</span> <span class="fn">handleSerialInput</span>() {
+  <span class="kw">if</span> (Serial.available()) {
+    <span class="ty">int</span> level = Serial.parseInt();
+    <span class="kw">if</span> (level &gt;= <span class="num">0</span> && level &lt;= <span class="num">100</span>) {
+      Serial.print(<span class="str">"Serial input: charge = "</span>);
+      Serial.println(level);
+      setCharge(level);
+    }
+    <span class="kw">while</span> (Serial.available()) Serial.read();
+  }
+}
+
+<span class="ty">void</span> <span class="fn">setCharge</span>(<span class="ty">int</span> level) {
+  <span class="kw">if</span> (level != currentCharge) { currentCharge = level; needsRedraw = <span class="kw">true</span>; }
+}
+
+<span class="cmt">// ============ DISPLAY ============</span>
+<span class="ty">void</span> <span class="fn">redrawDisplay</span>() {
+  Serial.print(<span class="str">"Drawing charge = "</span>); Serial.println(currentCharge);
+
+  <span class="ty">bool</span> inverted = (currentCharge &lt; ALERT_THRESHOLD);
+  drawChargeBar(currentCharge);
+
+  refreshCount++;
+  <span class="cmt">// Force a full refresh on inversion flip OR every 10 partial updates
+  // (full refresh clears ghosting that partial refresh leaves behind)</span>
+  <span class="ty">bool</span> needFullRefresh =
+      (inverted != lastWasInverted) || (refreshCount % <span class="num">10</span> == <span class="num">0</span>);
+
+  <span class="kw">if</span> (needFullRefresh) {
+    EPD_Init();
+    EPD_Display(ImageBW);
+  } <span class="kw">else</span> {
+    EPD_Init_Fast();
+    EPD_Display_Fast(ImageBW);
+  }
+  EPD_DeepSleep();
+  lastWasInverted = inverted;
+}
+
+<span class="ty">void</span> <span class="fn">drawChargeBar</span>(<span class="ty">int</span> percentage) {
+  <span class="ty">bool</span> alert = (percentage &lt; ALERT_THRESHOLD);
+  <span class="ty">UBYTE</span> bg = alert ? BLACK : WHITE;
+  <span class="ty">UBYTE</span> fg = alert ? WHITE : BLACK;
+
+  <span class="cmt">// Reset framebuffer with chosen background</span>
+  Paint_NewImage(ImageBW, EPD_W, EPD_H, <span class="num">0</span>, bg);
+  Paint_Clear(bg);
+
+  <span class="cmt">// Battery body outline</span>
+  <span class="ty">int</span> bx = <span class="num">40</span>,  by = <span class="num">50</span>;
+  <span class="ty">int</span> bw = <span class="num">680</span>, bh = <span class="num">172</span>;
+  Paint_DrawRectangle(bx, by, bx + bw, by + bh,
+                      fg, DOT_PIXEL_3X3, DRAW_FILL_EMPTY);
+
+  <span class="cmt">// Positive terminal (button top) on the right</span>
+  Paint_DrawRectangle(bx + bw, by + <span class="num">50</span>, bx + bw + <span class="num">25</span>, by + bh - <span class="num">50</span>,
+                      fg, DOT_PIXEL_3X3, DRAW_FILL_FULL);
+
+  <span class="cmt">// Proportional fill inside the body</span>
+  <span class="ty">int</span> innerX = bx + <span class="num">8</span>,  innerY = by + <span class="num">8</span>;
+  <span class="ty">int</span> innerW = bw - <span class="num">16</span>, innerH = bh - <span class="num">16</span>;
+  <span class="ty">int</span> fillW  = (innerW * percentage) / <span class="num">100</span>;
+  <span class="kw">if</span> (fillW &gt; <span class="num">0</span>) {
+    Paint_DrawRectangle(innerX, innerY, innerX + fillW, innerY + innerH,
+                        fg, DOT_PIXEL_1X1, DRAW_FILL_FULL);
+  }
+
+  <span class="cmt">// Diagonal hatch pattern in the empty (unfilled) region at 0%</span>
+  <span class="kw">if</span> (percentage == <span class="num">0</span>) {
+    <span class="kw">for</span> (<span class="ty">int</span> x = innerX; x &lt; innerX + innerW; x += <span class="num">16</span>) {
+      Paint_DrawLine(x, innerY, x + innerH, innerY + innerH,
+                     fg, DOT_PIXEL_1X1, LINE_STYLE_SOLID);
+    }
+  }
+
+  <span class="cmt">// Percentage text, centered. Bigger font in alert mode.</span>
+  <span class="ty">char</span> txt[<span class="num">8</span>];
+  snprintf(txt, <span class="kw">sizeof</span>(txt), <span class="str">"%d%%"</span>, percentage);
+  <span class="kw">if</span> (alert) {
+    <span class="cmt">// In alert mode: text sits on the fill (white on black)</span>
+    Paint_DrawString_EN(bx + bw/<span class="num">2</span> - <span class="num">72</span>, by + bh/<span class="num">2</span> - <span class="num">28</span>,
+                        txt, &amp;Font48, BLACK, WHITE);
+    Paint_DrawString_EN(bx + bw/<span class="num">2</span> - <span class="num">68</span>, by + bh + <span class="num">14</span>,
+                        <span class="str">"RECHARGE"</span>, &amp;Font24, BLACK, WHITE);
+  } <span class="kw">else</span> {
+    <span class="cmt">// Normal mode: text is black on the white background, reversed to white over the fill</span>
+    Paint_DrawString_EN(bx + bw/<span class="num">2</span> - <span class="num">60</span>, by + bh/<span class="num">2</span> - <span class="num">28</span>,
+                        txt, &amp;Font48, bg, fg);
+  }
+
+  <span class="cmt">// Top label</span>
+  Paint_DrawString_EN(<span class="num">250</span>, <span class="num">10</span>, <span class="str">"PSYCH_BATTERY"</span>,
+                      &amp;Font24, bg, fg);
+}</pre>
+</details>
+</div>
+</details>
+
+<details class="section-fold"><summary>4.3 Edit WiFi credentials &amp; upload</summary>
+<div class="section-body">
+<p>Near the top of the sketch, replace <code>"YourWiFiName"</code> and <code>"YourWiFiPassword"</code> with your actual 2.4&nbsp;GHz network. ESP32-S3 supports 2.4&nbsp;GHz only &mdash; same restriction as the original ESP32. Upload (same Upload button). Open Serial Monitor at 115200. You should see:</p>
+<details class="code-fold"><summary>Expected serial output</summary>
+<pre class="code-block">Psych_Battery CrowPanel starting...
+Connecting to WiFi.....
+Connected! IP: 192.168.1.132
+HTTP server on port 80</pre>
+</details>
+<p>Write down the IP &mdash; same contract as the other build, same <code>charge_sender.py</code>.</p>
+</div>
+</details>
+
+<details class="section-fold"><summary>4.4 Test via serial &amp; browser</summary>
+<div class="section-body">
+<ul class="findings">
+  <li><strong>Serial:</strong> in Serial Monitor, type a number 0&ndash;100 and press Enter. Partial refresh &lt;1 s.</li>
+  <li><strong>Browser:</strong> go to <code>http://&lt;BATTERY_IP&gt;/charge?level=15</code>. Display should invert (black bg, white "15%" + "RECHARGE") since you crossed under 20%.</li>
+  <li><strong>Alert flip &rarr; normal flip:</strong> try <code>level=25</code>. Display reverts to white background. The inversion transitions always trigger a full refresh (~8 s) to avoid ghost artifacts.</li>
+</ul>
+</div>
+</details>
+
+<!-- ============ PHASE 5: PYTHON BACKEND ============ -->
+<div class="phase-header"><span class="phase-num">5</span><span class="phase-title">Python Backend Integration</span><span class="phase-time">0 extra min (reuses e-ink build)</span></div>
+
+<details class="section-fold" id="cp-python"><summary>5.1 Reuse charge_sender.py &mdash; the HTTP contract is identical</summary>
+<div class="section-body">
+<p>The firmware above exposes the same HTTP interface as the E-Ink Build firmware: <code>POST /charge</code> with JSON <code>{"level": 0-100}</code>, <code>GET /charge?level=N</code>, and <code>GET /</code> returns plain-text status. That means <strong>the entire Phase 5 of the <a href="#sec-seinkguide">E-Ink Build</a> applies verbatim</strong> &mdash; <code>charge_sender.py</code>, <code>energy_score_to_battery.py</code>, the ActivityWatch loop, and the virtualenv setup all work unchanged.</p>
+
+<p>The only edit: set <code>BATTERY_IP</code> at the top of <code>charge_sender.py</code> to the CrowPanel's IP address (from the Serial Monitor output in 4.3). Everything else is byte-for-byte the same.</p>
+
+<div class="callout"><div class="label">If you're running both builds side-by-side</div><p>Nothing stops you from flashing both a Good Display kit and a CrowPanel on the same network and mirroring charge to both. Just set two IPs in <code>charge_sender.py</code> and <code>POST</code> to each in parallel. Useful for A/B testing visual legibility at a distance, or for demoing the two display styles during the McComb seminar.</p></div>
+</div>
+</details>
+
+<!-- ============ PHASE 6: ENCLOSURE ============ -->
+<div class="phase-header"><span class="phase-num">6</span><span class="phase-title">Enclosure Notes</span><span class="phase-time">varies</span></div>
+
+<details class="section-fold" id="cp-enclosure"><summary>6.1 What changes vs. the kit enclosure</summary>
+<div class="section-body">
+<p>The CrowPanel is mechanically a single rigid PCB, so the enclosure simplifies:</p>
+<ul class="findings">
+  <li><strong>One cavity, not two.</strong> The kit needed a display cavity (for the panel) plus a PCB cavity (for the motherboard + adapter), connected by a ribbon channel. The CrowPanel needs a single rectangular pocket sized to the full board.</li>
+  <li><strong>Front bezel dimensions:</strong> the panel's visible glass area is still 139&times;48&nbsp;mm (same Good Display glass), but it's offset within the PCB &mdash; measure the offset on your physical unit before cutting the front window in CAD.</li>
+  <li><strong>USB-C port location:</strong> typically on the short edge of the PCB. Add a 10&times;4&nbsp;mm cable relief notch on that side so the enclosure doesn't block USB-C head clearance.</li>
+  <li><strong>LiPo hatch (optional):</strong> if running cordless, leave a small hatch to access the SH1.0 connector and the battery bay.</li>
+  <li><strong>Buttons:</strong> the board's onboard RESET / BOOT / Menu / Back / dial switch stick up ~3&nbsp;mm from the PCB. Either leave them exposed via cutouts or add silicone flexure tabs over them if you want clean industrial design.</li>
+</ul>
+
+<p>Every other enclosure detail (VHB mounting, Jacobs/Supernode printing, sanding, M3 inserts, acrylic window) is identical to <a href="#sec-seinkguide">the Good Display kit enclosure</a>. Reuse that guide.</p>
+</div>
+</details>
+
+<!-- ============ COMPARISON ============ -->
+<details class="section-fold"><summary>Comparison: CrowPanel vs. Good Display 4-Color Kit</summary>
+<div class="section-body">
+<table class="result-table">
+<tr><th></th><th>CrowPanel (this build)</th><th>Good Display 4-Color Kit</th></tr>
+<tr><td><strong>Cost (board only)</strong></td><td>~$55&ndash;70 (Amazon)</td><td>~$55&ndash;80 (buy-lcd.com)</td></tr>
+<tr><td><strong>Board count</strong></td><td>1 (all-in-one)</td><td>3 (motherboard + adapter + panel)</td></tr>
+<tr><td><strong>MCU</strong></td><td>ESP32-S3 @ 240 MHz, 8 MB flash + 8 MB PSRAM</td><td>ESP32 @ 240 MHz, 4 MB flash, no PSRAM</td></tr>
+<tr><td><strong>Panel colors</strong></td><td>Black / White</td><td>Black / White / Yellow / Red</td></tr>
+<tr><td><strong>Panel resolution</strong></td><td>272&times;792 (identical glass)</td><td>272&times;792 (identical glass)</td></tr>
+<tr><td><strong>USB</strong></td><td>USB-C native (no CP2102 driver)</td><td>Micro-USB via CP2102</td></tr>
+<tr><td><strong>LiPo connector</strong></td><td>SH1.0-2P built in</td><td>Not present (requires soldering)</td></tr>
+<tr><td><strong>SD card slot</strong></td><td>Yes (TF)</td><td>No</td></tr>
+<tr><td><strong>Onboard buttons</strong></td><td>RESET, BOOT, Menu, Back, dial switch</td><td>RESET, BOOT</td></tr>
+<tr><td><strong>Partial refresh</strong></td><td>~300 ms</td><td>~12 s (fast mode)</td></tr>
+<tr><td><strong>Full refresh</strong></td><td>~8 s</td><td>~20 s</td></tr>
+<tr><td><strong>Ribbon-cable handling</strong></td><td>None required</td><td>Critical (contacts DOWN, 5-6 mm deep)</td></tr>
+<tr><td><strong>Alert mechanism</strong></td><td>Size + inversion (size/contrast)</td><td>Yellow &rarr; red hue transition</td></tr>
+<tr><td><strong>Best for</strong></td><td>Fast iteration, cordless operation, lower ribbon-related failure rate</td><td>Information-rich display with color-coded zones</td></tr>
+</table>
+</div>
+</details>
+
+<!-- ============ TROUBLESHOOTING ============ -->
+<details class="section-fold" id="cp-troubleshooting"><summary>Troubleshooting Guide</summary>
+<div class="section-body">
+<table class="result-table">
+<tr><th>Symptom</th><th>Likely Cause</th><th>Fix</th></tr>
+<tr><td>Upload fails: "Failed to connect"</td><td>Board didn't auto-enter flash mode</td><td>Hold BOOT, tap RESET, release BOOT, then click Upload.</td></tr>
+<tr><td>Upload succeeds but Serial Monitor is blank</td><td>"USB CDC On Boot" disabled</td><td>Tools &rarr; USB CDC On Boot &rarr; Enabled. Re-upload.</td></tr>
+<tr><td>Display stays blank after upload</td><td>Wrong partition scheme or PSRAM off</td><td>Verify Partition = "Huge APP (3MB No OTA/1MB SPIFFS)" and PSRAM = "OPI PSRAM". Re-upload.</td></tr>
+<tr><td>Only half the panel draws</td><td>Using GxEPD2 or single-driver library</td><td>Switch to ELECROW's EPD.h (dual-SSD1683). Copy the library files from <code>example/</code> into your sketch folder.</td></tr>
+<tr><td>Panel flickers / ghosts heavily after many updates</td><td>Partial refresh has accumulated ghost charge</td><td>Normal. Firmware does a full refresh every 10 updates. Lower the counter to 5 if it bothers you.</td></tr>
+<tr><td>"Out of memory" at boot</td><td>Framebuffer allocation failed</td><td>Confirm PSRAM is set to OPI PSRAM in Tools. The framebuffer (~27 KB) is well under the 8 MB PSRAM budget, so this almost always means PSRAM is disabled.</td></tr>
+<tr><td>Inversion transition flashes multiple times</td><td>Full refresh sequence on the alert-flip</td><td>Expected &mdash; we force a full refresh on inversion so ghosting doesn't leak between contrast states. Partial refresh between same-state updates.</td></tr>
+<tr><td>"Connecting to WiFi...." never ends</td><td>Wrong SSID / password, or 5 GHz only</td><td>ESP32-S3 is 2.4 GHz only. Use a phone hotspot if your home network is 5 GHz.</td></tr>
+<tr><td>HTTP requests time out</td><td>CrowPanel lost WiFi or IP changed</td><td>Check Serial Monitor for a new IP. Set a static DHCP lease on your router for a stable IP.</td></tr>
+<tr><td>COM port doesn't appear</td><td>USB cable is charge-only, not data</td><td>Swap to a known-good USB-C data cable. ESP32-S3 uses native USB, so no driver needs installing.</td></tr>
+<tr><td>Board resets every few seconds</td><td>Watchdog timeout from a blocking function</td><td>Check that <code>loop()</code> calls <code>server.handleClient()</code> frequently. Don't put <code>delay()</code> over 1 s in the main loop.</td></tr>
+</table>
+
+<div class="callout"><div class="label">When to ask for help</div><p>If the firmware uploads cleanly but the display is blank after verifying all Tools settings, file an issue on the <a href="https://github.com/Elecrow-RD/CrowPanel-ESP32-5.79-E-paper-HMI-Display-with-272-792/issues" target="_blank">ELECROW repo</a> with your Arduino IDE version, ESP32 package version, and the complete Tools menu settings. ELECROW's support also responds to emails at <code>techsupport@elecrow.com</code>.</p></div>
+</div>
+</details>
+</div>
+
 </div>
 `,
   });
@@ -4071,7 +4617,10 @@ RECHARGE_IDLE_PER_MIN = <span class="num">0.4</span>    <span class="cmt"># AFK/
 // AHMED PAGE
 // ═══════════════════════════════════════════════════
 function buildAhmed() {
-return pageWrapper({ title: 'Faez Ahmed: AI-Driven Engineering Design', icon: '\uD83D\uDE80', body: `
+  return pageWrapper({
+    title: "Faez Ahmed: AI-Driven Engineering Design",
+    icon: "\uD83D\uDE80",
+    body: `
 <div class="editorial">
 <style>
 .editorial{--paper:#FBF8F1;--ink:#1C1712;--ink-soft:#4a3f33;--rule:#d8cfbd;--accent-ed:#2E5D3E;--accent-ed-soft:#6a8f78;background:var(--paper);color:var(--ink);font-family:'Source Serif 4','Source Serif Pro',Georgia,serif;line-height:1.7;position:relative;min-height:100vh;}
@@ -4304,7 +4853,8 @@ return pageWrapper({ title: 'Faez Ahmed: AI-Driven Engineering Design', icon: '\
 </div>
 </div>
 
-`});
+`,
+  });
 }
 
 // ─── Server ───
