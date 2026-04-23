@@ -163,18 +163,30 @@ app = Flask(__name__)
 _STATE_LOCK = threading.Lock()
 
 
+@app.after_request
+def add_cors(resp):
+    """Allow the static Vercel app (and local server.py proxy) to call this server."""
+    resp.headers["Access-Control-Allow-Origin"] = "*"
+    resp.headers["Access-Control-Allow-Methods"] = "GET, POST, OPTIONS"
+    resp.headers["Access-Control-Allow-Headers"] = "Content-Type"
+    return resp
+
+
 @app.get("/state")
 def state_endpoint():
-    """JSON state for the battery hardware to poll."""
+    """JSON state for the battery hardware and web app to poll."""
     with _STATE_LOCK:
         st = load_state()
-    # surface just the display-relevant fields
     return jsonify({
-        "E_display": st.get("E_display", st["E"]),
-        "S":         st["S"],
-        "phase":     st.get("phase", 0),
-        "last_tick": st.get("last_tick_iso"),
-        "chronotype": st.get("chronotype", "intermediate"),
+        # E_display is stored 0-100 internally; expose as 0-1 for the frontend
+        "E_display":    st.get("E_display", st["E"]) / 100.0,
+        "E_internal":   st["E"],
+        "S":            st["S"],
+        "E_rest_now":   st.get("E_rest_now", 70.0),
+        "last_tick_iso": st.get("last_tick_iso"),
+        "last_feats":   st.get("last_feats", {}),
+        "phase":        st.get("phase", 0),
+        "chronotype":   st.get("chronotype", "intermediate"),
     })
 
 
@@ -189,22 +201,36 @@ def log_form():
 
 @app.post("/log")
 def log_post():
-    """Accept a recovery-log entry and append to state."""
+    """Accept a recovery-log entry or subjective rating and append to state."""
     data = request.get_json(silent=True) or request.form.to_dict()
-    kind = data.get("kind")                      # 'outside' | 'walk' | 'with_people' | 'detach'
-    minutes = float(data.get("minutes", 0))
-    if kind not in {"outside", "walk", "with_people", "detach"} or minutes <= 0:
-        return jsonify({"ok": False, "error": "bad kind or minutes"}), 400
+    kind = data.get("kind")
+    now_iso = dt.datetime.now().isoformat()
 
     with _STATE_LOCK:
         st = load_state()
-        st.setdefault("recovery_log", []).append({
-            "kind": kind,
-            "minutes": minutes,
-            "at": dt.datetime.now().isoformat(),
-        })
+
+        if kind in {"outside", "walk", "with_people", "detach"}:
+            minutes = float(data.get("minutes", 0))
+            if minutes <= 0:
+                return jsonify({"ok": False, "error": "bad kind or minutes"}), 400
+            st.setdefault("recovery_log", []).append({
+                "kind": kind, "minutes": minutes, "at": now_iso,
+            })
+            log.info("Recovery log: %s +%.1f min", kind, minutes)
+
+        elif kind in {"energy_rating", "stress_rating"}:
+            value = int(data.get("value", 0))
+            if not (1 <= value <= 100):
+                return jsonify({"ok": False, "error": "value must be 1-100"}), 400
+            st.setdefault("ratings", []).append({
+                "kind": kind, "value": value, "at": now_iso,
+            })
+            log.info("Rating: %s = %d", kind, value)
+
+        else:
+            return jsonify({"ok": False, "error": "unknown kind"}), 400
+
         save_state(st)
-    log.info("Recovery log: %s +%.1f min", kind, minutes)
     return jsonify({"ok": True})
 
 
@@ -238,6 +264,7 @@ def run_tick() -> None:
         st["E"] = E_new
         st["S"] = S_new
         st["E_display"] = E_disp
+        st["E_rest_now"] = E_rest_now
         st["last_tick_iso"] = now.isoformat()
         st["last_feats"] = feats
         save_state(st)
