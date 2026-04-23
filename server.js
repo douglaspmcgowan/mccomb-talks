@@ -1665,8 +1665,6 @@ CREATE TABLE score_5m     (ts INT PRIMARY KEY, E REAL, S REAL, F REAL, model TEX
 </ul>
 <p>The display reads <code>E_display = clip01(E_rest_now + (E &minus; 70))</code> &mdash; Model&nbsp;D sets the floor, Model&nbsp;B modulates above it.</p>
 
-<div class="slide-fig"><img src="/figures/battery/circumplex.svg" alt="Russell circumplex with Energy, Stress, Fulfillment placed on valence-arousal plane" onclick="openLightbox(this)"><div class="caption">Russell's valence &times; arousal circumplex. "Energy," "stress," and "fulfillment" sit in distinct quadrants. A single scalar cannot preserve this geometry &mdash; which is why several of the models below output a vector, not a number.</div></div>
-
 <div class="callout"><div class="label">Why not just add and subtract?</div>
 <p>The intuitive "meeting = -5, walk = +10, run out the clock" model is wrong for two reasons well-established in the literature:</p>
 <p><strong>(1) Ego-depletion has not replicated.</strong> Vohs et al. (2021) pre-registered multi-lab replication: effect size d &asymp; 0.10, indistinguishable from zero. The original Baumeister (1998) "willpower is a finite resource" framing &mdash; which would justify pure subtraction &mdash; does not survive replication. <em>Any</em> additive model should therefore be treated as a heuristic, not a mechanism.</p>
