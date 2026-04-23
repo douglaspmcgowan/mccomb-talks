@@ -864,7 +864,7 @@ function buildSandbox() {
 <nav class="nav"><div class="nav-inner">
   <button class="nav-tab active" onclick="showSection('scontext',this)">Context</button>
   <button class="nav-tab" onclick="showSection('ssystems',this)">Systems Map</button>
-  <button class="nav-tab" onclick="showSection('stech',this)">Tech Stack</button>
+  <button class="nav-tab" onclick="showSection('stech',this)">Coding Plan</button>
   <button class="nav-tab" onclick="showSection('ssignals',this)">Data Signals</button>
   <button class="nav-tab" onclick="showSection('salgorithm',this)">Scoring Algorithms</button>
   <button class="nav-tab" onclick="showSection('sledguide',this)">LED Build</button>
@@ -1051,192 +1051,194 @@ function buildSandbox() {
 
 <!-- ===== TECH STACK ===== -->
 <div class="section" id="sec-stech">
-<h2>Technical Implementation Guide</h2>
-<p>This section covers how to actually build the Psych_Battery software &mdash; how to collect the data, how to trigger interruptions, and what tools to use. It's written for someone who codes in Python but isn't a software engineer.</p>
+<h2>Coding Plan: How the Battery Actually Runs</h2>
+<p>This tab is the concrete engineering plan for v1. It covers the eight data sources feeding Models B and D, the code that wires them together, and the phased setup to get everything online. Each integration is a small Python module that follows the same contract, so the core loop stays legible.</p>
 
-<div class="callout"><div class="label">Jargon Guide</div><p>
-<strong>API</strong> = a set of rules for talking to another service. Like a restaurant menu: you order (request) and get food back (response).<br>
-<strong>MCP</strong> = Model Context Protocol. A USB-C port for AI &mdash; standardizes how AI tools connect to external services. MCP servers wrap regular APIs to make them AI-friendly.<br>
-<strong>OAuth</strong> = a security system that lets you grant an app limited access to your account without giving it your password.<br>
-<strong>Admin/root privileges</strong> = running a program with "superuser" powers. Required for some hardware/network changes.<br>
-<strong>Gamma ramp</strong> = a lookup table that maps pixel colors to what your monitor displays. Lowering it darkens the screen in software.<br>
-<strong>Proxy server</strong> = a middleman between your computer and the internet. Traffic passes through it, letting you inspect, delay, or block requests.<br>
-<strong>Hosts file</strong> = a text file on your computer that maps website names to IP addresses. Pointing a site to 127.0.0.1 blocks it.<br>
-<strong>Heartbeat</strong> = a periodic "I'm still here" message. ActivityWatch uses heartbeats to efficiently track what you're doing without recording every millisecond.
+<div class="callout"><div class="label">Companion docs (in <code>/docs</code>)</div><p>
+<strong><code>setup.md</code></strong> &mdash; step-by-step onboarding in three phases.<br>
+<strong><code>data-sources.md</code></strong> &mdash; per-source API specs, auth, rate limits.<br>
+<strong><code>data-flow-to-models.md</code></strong> &mdash; the authoritative signal &rarr; feature &rarr; model-term table.<br>
+<strong><code>models-b-and-d-encoding.md</code></strong> &mdash; the shipped equations, default parameters, and the per-user fitting roadmap.<br>
+<strong><code>models-f-and-g.md</code></strong> &mdash; deep pedagogy for Kalman and contextual-bandit upgrades (kept on disk; not in v1 of the site).
 </p></div>
 
 <div class="toc"><h4>Sections</h4><ul>
-  <li><a href="#tech-arch">Recommended Architecture</a></li>
-  <li><a href="#tech-data">Data Collection</a></li>
-  <li><a href="#tech-interrupt">Workflow Interruptions</a></li>
-  <li><a href="#tech-mcp">MCP Servers & Integrations</a></li>
-  <li><a href="#tech-risks">Risks & Gotchas</a></li>
-  <li><a href="#tech-privacy">Privacy & Legal</a></li>
-  <li><a href="#tech-phases">Phased Build Plan</a></li>
+  <li><a href="#code-arch">Architecture at a glance</a></li>
+  <li><a href="#code-contract">The integration contract</a></li>
+  <li><a href="#code-sources">Eight data sources &mdash; what they measure, where they live</a></li>
+  <li><a href="#code-models">Model code: B, D, and the feature normalizer</a></li>
+  <li><a href="#code-server">The <code>main.py</code> server (state, ticks, <code>/log</code> UI)</a></li>
+  <li><a href="#code-phases">Phased setup: Phase&nbsp;1 &rarr; 2 &rarr; 3</a></li>
+  <li><a href="#code-privacy">Privacy rules (hard-coded in the integrations)</a></li>
+  <li><a href="#code-risks">Risks and known-broken modes</a></li>
 </ul></div>
 
-<h3 id="tech-arch">Recommended Architecture</h3>
-<p>After researching multiple approaches and having them critically reviewed, here's the architecture that balances <strong>feasibility for one person</strong> with <strong>enough data to be useful</strong>:</p>
+<h3 id="code-arch">Architecture at a glance</h3>
+<p>One Python process on the laptop runs everything. Every 5&nbsp;minutes it polls the integrations, builds a feature vector, advances Model&nbsp;B's (E,&nbsp;S) state, and asks Model&nbsp;D for a chronotype-aware baseline to stack underneath. The result is written to a JSON state file and (eventually) shipped to the e-ink display.</p>
 
 <div class="flow-diagram">
-  <div class="flow-node"><strong>ActivityWatch</strong><br><em>App/web/idle tracking</em></div>
+  <div class="flow-node"><strong>8 integrations</strong><br><em>fetch_recent()</em></div>
   <span class="flow-arrow">&rarr;</span>
-  <div class="flow-node"><strong>Custom Watchers</strong><br><em>Gmail, Slack, AI APIs</em></div>
+  <div class="flow-node"><strong>feature_normalizer</strong><br><em>raw &rarr; feats</em></div>
   <span class="flow-arrow">&rarr;</span>
-  <div class="flow-node"><strong>Energy Score<br>Calculator</strong><br><em>Python script</em></div>
+  <div class="flow-node"><strong>Model&nbsp;B</strong><br><em>tick_B(E,&nbsp;S,&nbsp;feats)</em></div>
   <span class="flow-arrow">&rarr;</span>
-  <div class="flow-node"><strong>Intervention<br>Engine</strong><br><em>Notifications, blocks</em></div>
+  <div class="flow-node"><strong>Model&nbsp;D</strong><br><em>expected_energy(t)</em></div>
   <span class="flow-arrow">&rarr;</span>
-  <div class="flow-node"><strong>Physical Battery</strong><br><em>ESP32 + display</em></div>
+  <div class="flow-node"><strong>state.json + display</strong><br><em>E_display, S, color</em></div>
 </div>
 
-<p><strong>ActivityWatch</strong> is the backbone. It's free, open-source, stores everything locally (privacy-first), runs on Windows/macOS/Linux, and has a Python API. It already tracks which apps you use, which websites you visit, and when you're idle. You write custom "watchers" in Python to feed in additional data (email counts, AI usage, etc.), and everything merges into a unified timeline queryable through one API.</p>
+<p>Each integration is a ~100-line module following the same contract, so the core loop only cares about a dict of numbers. Integrations can fail silently &mdash; the feature normalizer degrades gracefully and Model&nbsp;B still produces a score. This is how the system survives Slack being down, the phone being dead, or the wearable being off the wrist.</p>
 
-<div class="callout"><div class="label">Critical Caveat: macOS</div><p>ActivityWatch has documented permission issues on macOS &mdash; window title tracking requires Accessibility permissions that can break silently after OS updates. The keystroke library (pynput) also struggles with macOS Sequoia/Sonoma permission changes. <strong>If you're developing on macOS, budget 3-4x extra time for permissions debugging.</strong> Windows is significantly more reliable for this stack.</p></div>
+<div class="callout"><div class="label">Why a single process, not a fleet of scripts</div><p>ActivityWatch already runs locally and owns the heartbeat discipline for app/URL tracking. For everything else, cron-style scheduling adds moving parts (logs scattered across files, missed ticks after sleep, no shared state). A single Flask process on <code>localhost:7070</code> owns state, exposes <code>/state</code> for the display and <code>/log</code> for manual recovery entries, and ticks on a background thread. Kill it and everything stops cleanly.</p></div>
 
-<h3 id="tech-data">Data Collection: Five Streams</h3>
+<h3 id="code-contract">The integration contract</h3>
+<p>Every integration module exposes exactly one function:</p>
+<pre class="code-block"><code>def fetch_recent(since: datetime, until: datetime) -&gt; dict[str, float]:
+    """Return aggregated signals for the window. Never raise."""</code></pre>
 
-<h4>1. App & Website Time (ActivityWatch &mdash; built-in)</h4>
-<p>Install ActivityWatch + its browser extension. Out of the box, you get:</p>
+<p>The return dict has 2&ndash;8 numeric keys using a consistent <code>source_signal</code> naming convention (e.g. <code>aw_focus_block_min</code>, <code>gcal_meeting_video_min</code>, <code>slack_msgs_after_hours</code>). The feature normalizer knows which sources produce which raw signals and combines them into the feature vector Model&nbsp;B expects.</p>
+
+<p>Critical rules, enforced per integration:</p>
 <ul class="findings">
-  <li>Time per application (e.g., "VS Code: 3h, Slack: 1.5h, Chrome: 2h")</li>
-  <li>Time per website/domain via browser extension</li>
-  <li>Idle/AFK detection (mouse/keyboard inactivity)</li>
-  <li>All stored locally in SQLite, queryable via REST API on localhost:5600</li>
-</ul>
-<p><strong>Python access:</strong> <code>pip install aw-client</code>, then query events with date ranges and filters. This alone gives you AI tool time (time on chatgpt.com, claude.ai), social media time, news time, and total screen time.</p>
-<p><strong>Difficulty:</strong> Install and run. Minimal code needed.</p>
-
-<h4>2. Communication Volume (Gmail API + Slack API)</h4>
-<table class="result-table">
-<tr><th>Service</th><th>API</th><th>What You Get</th><th>MCP Server?</th><th>Difficulty</th></tr>
-<tr><td>Gmail</td><td>Gmail API <code>messages.list</code></td><td>Message count, timestamps (no content needed)</td><td>Yes &mdash; multiple available</td><td>Medium (OAuth setup)</td></tr>
-<tr><td>Slack</td><td>Slack Web API <code>conversations.history</code></td><td>Message counts per channel, timestamps</td><td>Yes &mdash; official MCP server</td><td>Medium (workspace admin approval)</td></tr>
-<tr><td>Zoom</td><td>Zoom Report API <code>/report/meetings</code></td><td>Actual call duration (not scheduled)</td><td>No MCP server</td><td>Medium</td></tr>
-<tr><td>Outlook/Teams</td><td>Microsoft Graph API</td><td>Email volume, call records</td><td>Partial MCP support</td><td>High (Azure AD auth)</td></tr>
-</table>
-<p><strong>Key design choice:</strong> Only query message <em>counts</em> and <em>timestamps</em>, never message content. This dramatically reduces privacy risk and keeps your data collection closer to metadata than surveillance.</p>
-
-<h4>3. AI Token Usage (Direct API Calls)</h4>
-<table class="result-table">
-<tr><th>Provider</th><th>Endpoint</th><th>What You Get</th><th>Access Needed</th></tr>
-<tr><td>OpenAI</td><td>Usage API</td><td>Tokens per request, daily costs</td><td>API key + org admin for full Usage API</td></tr>
-<tr><td>Anthropic</td><td><code>/v1/organizations/usage_report</code></td><td>Input/output tokens by model, 1-min to 1-day intervals</td><td>Admin API key (<code>sk-ant-admin...</code>)</td></tr>
-<tr><td>GitHub Copilot</td><td>Copilot Metrics API</td><td>Acceptance rates, lines generated</td><td>Org admin access</td></tr>
-</table>
-<p><strong>Simpler alternative:</strong> Skip the API complexity &mdash; ActivityWatch's browser watcher already tracks <em>time</em> on AI tool websites. For a prototype, "minutes spent in ChatGPT" may be a better proxy for cognitive drain than raw token counts.</p>
-
-<h4>4. Typing Cadence (Proceed with Caution)</h4>
-<div class="callout"><div class="label">Honest Assessment</div><p>Keystroke monitoring is the <strong>highest-risk, lowest-reward</strong> component. The pynput library silently fails on macOS, requires Accessibility + Input Monitoring permissions, and the data (typing speed, pause patterns) is a weak proxy for mental energy compared to what ActivityWatch gives you for free. <strong>Recommendation: skip this for Phase 1.</strong> If you add it later, use pynput on Windows only, and record only aggregate metrics (keystrokes/minute, not individual keys).</p></div>
-<p>If you do build it, the library is <code>pip install pynput</code>, and you'd write a small daemon that counts keystrokes per time window and logs averages to ActivityWatch as a custom watcher.</p>
-
-<h4>5. Work Time / Calendar (Google Calendar API)</h4>
-<p>Compare scheduled vs. actual work hours by pulling calendar events and comparing against ActivityWatch's active-time data. Multiple Google Calendar MCP servers exist for this. The key insight: <strong>the gap between scheduled end-of-day and actual last-activity time IS the "overtime" signal</strong> that feeds the Recharge Resistance stock.</p>
-
-<h3 id="tech-interrupt">Workflow Interruptions: What's Actually Feasible</h3>
-<p>The interruptions are ordered from simplest to most complex. Start with the top rows; only add the bottom rows if the simple ones aren't enough.</p>
-
-<table class="result-table">
-<tr><th>Intervention</th><th>How</th><th>Admin Needed?</th><th>Difficulty</th><th>Platforms</th></tr>
-<tr><td><strong>Desktop notifications</strong></td><td><code>pip install desktop-notifier</code> &mdash; supports action buttons ("Take Break" / "Snooze")</td><td>No</td><td>Low</td><td>All</td></tr>
-<tr><td><strong>Slack DND</strong></td><td>Slack API <code>dnd.setSnooze</code> &mdash; one API call pauses notifications</td><td>No (needs Slack token)</td><td>Low</td><td>All</td></tr>
-<tr><td><strong>Website blocking</strong></td><td>Modify hosts file: <code>127.0.0.1 twitter.com</code></td><td>Yes (one-time)</td><td>Low</td><td>All</td></tr>
-<tr><td><strong>Screen dimming (overlay)</strong></td><td>PyQt5 semi-transparent fullscreen window with <code>setWindowOpacity()</code></td><td>No</td><td>Low-Med</td><td>All</td></tr>
-<tr><td><strong>Screen dimming (hardware)</strong></td><td><code>pip install screen-brightness-control</code> with <code>fade_brightness()</code></td><td>No (laptops)</td><td>Low</td><td>Windows/Linux</td></tr>
-<tr><td><strong>AI tool throttling</strong></td><td>If you mediate API calls: add <code>time.sleep(delay)</code>. If not: hosts file blocking.</td><td>No / Yes</td><td>Low</td><td>All</td></tr>
-<tr><td><strong>Network latency</strong></td><td>macOS: pfctl+dummynet. Windows: NetBalancer.</td><td>Yes (root/admin)</td><td>High</td><td>Platform-specific</td></tr>
-<tr><td><strong>Frame rate reduction</strong></td><td>Windows: <code>pywin32 ChangeDisplaySettingsEx</code>. macOS: CoreGraphics.</td><td>Yes (Win)</td><td>High</td><td>Platform-specific</td></tr>
-</table>
-
-<div class="callout"><div class="label">The 80/20 Rule</div><p>Notifications + Slack DND + website blocking + screen overlay dimming covers 80% of the interruption effect with about 20% of the implementation effort. Network throttling and frame rate reduction are technically impressive but require admin privileges, platform-specific code, and fragile system-level changes. <strong>Build the simple interventions first and see if they're sufficient before adding complexity.</strong></p></div>
-
-<h4>Escalation Pattern</h4>
-<p>A suggested four-level escalation as mental energy depletes:</p>
-<ul class="findings">
-  <li><strong>Level 1 (Yellow zone):</strong> Gentle toast notification with recovery suggestion. Auto-dismisses after 10 seconds. No other changes.</li>
-  <li><strong>Level 2 (Orange zone):</strong> Persistent notification with action buttons. Slack DND enabled. Screen dims 15%.</li>
-  <li><strong>Level 3 (Red zone):</strong> Distracting websites blocked via hosts file. AI tools throttled. Screen dims 30%. Full-screen overlay notification with break timer.</li>
-  <li><strong>Level 4 (Dead battery):</strong> All communication tools paused. AI access blocked. Screen at 50% dim. Only way to recover: physically remove battery and recharge.</li>
+  <li><strong>Never return text or content.</strong> Slack counts messages; it never reads <code>msg["text"]</code>. Gmail counts; it never fetches bodies. Keystrokes is per-minute buckets; never individual keys.</li>
+  <li><strong>Never raise.</strong> Missing creds, rate limits, network errors all return an empty dict. The normalizer treats missing keys as "no information" and falls back to safe defaults.</li>
+  <li><strong>Read-only against user systems.</strong> No integration writes to Slack/Gmail/Calendar. The only place this code writes is <code>~/.psych-battery/state.json</code> and <code>proximity-log.jsonl</code>.</li>
 </ul>
 
-<p><strong>Critical safety feature:</strong> Implement a "panic button" (global keyboard shortcut) that immediately reverses ALL interventions. This is essential for user trust and for situations where the system misjudges and the user genuinely needs to keep working.</p>
-
-<h3 id="tech-mcp">MCP Servers & When to Use Them</h3>
-<p><strong>MCP (Model Context Protocol)</strong> is a standardized way for AI tools to connect to external services. Think of it as a USB-C port for AI &mdash; instead of every AI tool building custom integrations with Gmail, Slack, etc., MCP provides a universal connector.</p>
+<h3 id="code-sources">Eight data sources</h3>
+<p>These are the eight signal sources the shipped code reads from. See <code>docs/data-sources.md</code> for the per-API auth dance and rate-limit details; see <code>docs/data-flow-to-models.md</code> for the authoritative signal&nbsp;&rarr;&nbsp;feature&nbsp;&rarr;&nbsp;model-term table.</p>
 
 <table class="result-table">
-<tr><th>Service</th><th>MCP Server</th><th>Use It When</th></tr>
-<tr><td>Slack</td><td>Official (<code>@modelcontextprotocol/server-slack</code>)</td><td>You want an AI agent to dynamically query Slack based on context</td></tr>
-<tr><td>Gmail</td><td>Multiple (GongRzhe/Gmail-MCP-Server, Google Workspace MCP)</td><td>AI needs to search/read email metadata</td></tr>
-<tr><td>Google Calendar</td><td>nspady/google-calendar-mcp</td><td>AI needs to check schedule to determine work boundaries</td></tr>
-<tr><td>ActivityWatch</td><td>activitywatch-mcp (community)</td><td>AI needs real-time awareness of computer activity</td></tr>
-<tr><td>System Monitor</td><td>Multiple (srirama7, abhinav7895)</td><td>AI needs CPU/memory/battery data</td></tr>
+<tr><th>Source</th><th>Module</th><th>What it measures</th><th>Feeds</th></tr>
+<tr>
+  <td><strong>ActivityWatch</strong></td>
+  <td><code>integrations/activitywatch/aw.py</code></td>
+  <td>Focus blocks (25&nbsp;min+ in one app), context switches, AFK blocks, fragmentation std-dev, total active minutes. Pulled from the local <code>:5600</code> server.</td>
+  <td>B drain (context_switches, fragmentation), B recover (focus, afk_10plus)</td>
+</tr>
+<tr>
+  <td><strong>Slack</strong></td>
+  <td><code>integrations/slack/slack.py</code></td>
+  <td>Messages sent per hour, after-hours message fraction. Counts and timestamps only &mdash; <em>never</em> message text. Uses a user token (<code>xoxp-...</code>).</td>
+  <td>B load (after_hours_frac), Model&nbsp;D via baseline</td>
+</tr>
+<tr>
+  <td><strong>Google Calendar</strong></td>
+  <td><code>integrations/gcal/gcal.py</code></td>
+  <td>Video vs. in-person meeting minutes (video-call URL in the event = video), back-to-back meeting fraction. Desktop OAuth flow.</td>
+  <td>B drain (meeting_video, meeting_f2f, fragmentation_dev)</td>
+</tr>
+<tr>
+  <td><strong>Zoom</strong></td>
+  <td><code>integrations/zoom/zoom.py</code></td>
+  <td>Actual call duration and participant count via the Server-to-Server OAuth Report API. Differs from GCal in being what you <em>actually</em> attended.</td>
+  <td>B drain (meeting_video_min), overrides gcal where they overlap</td>
+</tr>
+<tr>
+  <td><strong>Todoist</strong></td>
+  <td><code>integrations/todoist/todoist.py</code></td>
+  <td>Completed-today count, overdue count, priority-weighted completions. REST&nbsp;v2 + Sync&nbsp;v9.</td>
+  <td>F-axis proxy (fulfillment, not in v1 but plumbed)</td>
+</tr>
+<tr>
+  <td><strong>Apple Health</strong></td>
+  <td><code>integrations/apple_health/health_watcher.py</code> + iOS Shortcut</td>
+  <td>HRV z-score (14-day rolling), sleep duration + efficiency, steps. Shortcut runs daily, dumps JSON to iCloud Drive; the watcher picks it up.</td>
+  <td>B load (sleep_debt_h, -hrv_z)</td>
+</tr>
+<tr>
+  <td><strong>Proximity</strong></td>
+  <td><code>integrations/proximity/receiver.py</code> + ESP32 / iPhone beacons</td>
+  <td>Minutes near another tagged BLE beacon (the other battery, or your phone). <code>bleak</code> scanner + <code>config.yaml</code> with UUIDs and RSSI thresholds.</td>
+  <td>B recover (with_people_min) &rarr; social recovery term</td>
+</tr>
+<tr>
+  <td><strong>Recovery log</strong></td>
+  <td><code>integrations/recovery_log/recovery_log.py</code> + <code>form.html</code></td>
+  <td>Manual taps for "went outside," "walk," "with people," "detached." Tiny web form served at <code>/log</code> on the local server.</td>
+  <td>B recover (walk_outside, outside_log), B detach (detach_block)</td>
+</tr>
+<tr>
+  <td><em>(Phase&nbsp;3 only)</em> <strong>Keystrokes</strong></td>
+  <td><code>integrations/keystrokes/keystrokes.py</code></td>
+  <td>Keys-per-minute and click-per-minute aggregates, never the keys themselves. Disabled by default (<code>SKIP_FOR_PHASE_1=True</code>) until Windows-only install is confirmed.</td>
+  <td>B drain (kpm_over_base in load term)</td>
+</tr>
 </table>
 
-<div class="callout"><div class="label">MCP vs. Direct API Calls &mdash; When to Use Which</div><p>
-<strong>Use direct API calls</strong> for your data collection backbone. Psych_Battery runs on a schedule, pulling the same data repeatedly. Direct calls are faster, simpler, and more reliable for deterministic tasks.<br><br>
-<strong>Use MCP</strong> if you add an AI agent component that needs to dynamically decide which tools to call based on context. For example, an LLM that looks at your current state and decides "I should check your calendar to see if you have a meeting in 10 minutes before triggering an interruption."<br><br>
-<strong>For Phase 1, you don't need MCP.</strong> Direct API calls are sufficient. MCP becomes valuable in Phase 3 when you might add an intelligent agent layer.
-</p></div>
+<div class="callout"><div class="label">Time outside = manual log, not GPS</div><p>GPS gating "outside vs. inside" from a laptop is unreliable, and phone-location polling is a battery drain. For v1 we just expose a one-tap "went outside for X&nbsp;min" button in the <code>/log</code> form. When this is tapped, <code>outside_log</code> is treated with the same weight as a detected walk. We can upgrade to passive detection later if the manual log proves too friction-y.</p></div>
 
-<h3 id="tech-risks">Biggest Risks & Gotchas</h3>
+<h3 id="code-models">Model code</h3>
+<p>The three model files are small and deliberately independent of the integrations &mdash; they operate on the feature dict only.</p>
+
+<h4><code>integrations/models/feature_normalizer.py</code></h4>
+<p>One function, <code>normalize(raw, baseline)</code>. Takes the union of all integration dicts, plus the user's per-signal mean/sd baseline (empty for the first two weeks), and returns the feature vector Model&nbsp;B consumes. Handles:</p>
 <ul class="findings">
-  <li><strong>macOS permissions will eat your time alive.</strong> Nearly every component (ActivityWatch, pynput, screen brightness, network throttling) requires different macOS permissions. Each breaks differently after OS updates. If developing on macOS, budget 3-4x the time for permissions debugging. Consider developing on Windows first.</li>
-  <li><strong>The API surface area is large.</strong> The full stack touches 10+ different APIs. For one developer, this is a recipe for spending all time on plumbing and none on research. <strong>Start with ActivityWatch + Gmail only.</strong></li>
-  <li><strong>Data timestamp synchronization.</strong> Correlating keystroke data (system time) with Gmail timestamps (RFC 3339) with ActivityWatch events (ISO 8601) requires careful normalization. Build a unified timestamp format from day one.</li>
-  <li><strong>screen-brightness-control does NOT support macOS.</strong> Despite being cross-platform in name, the pip package only works on Windows and Linux. On macOS, use Hammerspoon (Lua scripting tool) or the overlay approach instead.</li>
-  <li><strong>Slack workspace admin approval.</strong> Getting API access to a work Slack requires admin approval, which may be slow or denied. Have a fallback plan (manual logging, or ActivityWatch tracking time in Slack).</li>
+  <li><strong>Z-scoring</strong> (warm-phase and later): every signal becomes a z-score against the user's own mean/sd, so "meeting-dense day" is defined relative to what this person usually does.</li>
+  <li><strong>Graceful fallback</strong>: if a source is missing, the dependent feature is set to a safe neutral value (e.g. no HRV &rarr; <code>hrv_z = 0</code>, so the <code>max(0, -hrv_z)</code> load term contributes nothing).</li>
+  <li><strong>Derived features</strong>: <code>fragmentation_dev</code> (z-score of context-switch density), <code>kpm_over_base</code>, <code>sleep_debt_h</code>, <code>after_hours_frac</code> &mdash; none of these come straight from an API, they're combinations the normalizer computes.</li>
 </ul>
 
-<h3 id="tech-privacy">Privacy & Legal Considerations</h3>
-<div class="callout"><div class="label">UC Berkeley IRB</div><p>If this tool will be used on human subjects (even yourself, if the data informs published research), you likely need IRB approval from UC Berkeley's Committee for the Protection of Human Subjects (CPHS). Keystroke dynamics, communication metadata, and browsing history are considered sensitive data. <strong>If you only self-track and never publish the data as human-subjects research, IRB may not apply</strong> &mdash; but consult CPHS to be sure.</p></div>
+<h4><code>integrations/models/model_b.py</code> &mdash; the two-compartment core</h4>
+<p>One public function, <code>tick_B(E, S, feats, params)</code>, returning new <code>(E, S)</code>. Implements the coupled ODE from the Scoring Algorithms tab via fixed-step Euler at 5-min ticks. All default weights (<code>tauE_min=120</code>, <code>tauS_days=3.0</code>, <code>alpha=0.05</code>, <code>beta=1.5</code>, <code>E_rest=70</code>) live in <code>DEFAULT_PARAMS</code> at the top of the file, keyed by signal name so they're readable at a glance. A second helper, <code>display_energy(E, D_baseline)</code>, stacks Model&nbsp;D's chronotype prior underneath E for the final display value.</p>
 
+<h4><code>integrations/models/model_d.py</code> &mdash; circadian prior</h4>
+<p>Two public functions. <code>expected_energy(now, chronotype)</code> returns the baseline for the current time: a cosine envelope (amplitude 30, mean 50) peaking at chronotype-specific hours from Facer-Childs (2018) &mdash; lark&nbsp;13.87, intermediate&nbsp;16.00, owl&nbsp;20.98 &mdash; plus a small BRAC ripple (amplitude&nbsp;5, period&nbsp;1.5&nbsp;h). <code>chronotype_from_mctq(msf_sc_hours)</code> classifies from the user's one-time Munich Chronotype Questionnaire answer: <code>&lt;3.5</code>&nbsp;=&nbsp;lark, <code>&ge;5.5</code>&nbsp;=&nbsp;owl, else intermediate.</p>
+
+<h3 id="code-server">The <code>main.py</code> server</h3>
+<p>Flask on <code>localhost:7070</code>. Three jobs:</p>
+<ol class="findings">
+  <li><strong>Tick loop (background thread).</strong> Every <code>dt_min=5</code>&nbsp;min: call each integration's <code>fetch_recent</code>, normalize, <code>tick_B</code>, stack Model&nbsp;D, write <code>~/.psych-battery/state.json</code>.</li>
+  <li><strong><code>GET /state</code>.</strong> Returns the current <code>{E, S, E_display, color, updated_at}</code> as JSON. The display firmware polls this.</li>
+  <li><strong><code>GET/POST /log</code>.</strong> Renders <code>form.html</code> (tap buttons for outside / walk / with people / detach) and accepts POSTs into <code>state.json</code>'s <code>recovery_log</code> list.</li>
+</ol>
+
+<p>Secrets live in <code>~/.psych-battery/secrets.env</code> and are loaded once at boot. The code <em>never</em> reads, prints, or logs their values &mdash; they're passed as env vars to the API clients that need them. All integration imports are wrapped in <code>try/except ImportError</code> so the server starts cleanly even if you haven't installed <code>aw-client</code>, <code>bleak</code>, or <code>slack-sdk</code> yet.</p>
+
+<h3 id="code-phases">Phased setup</h3>
+<p>See <code>docs/setup.md</code> for the full play-by-play. In summary:</p>
+
+<h4>Phase 1 &mdash; Minimum viable loop (Week 1)</h4>
 <ul class="findings">
-  <li><strong>Never store key content.</strong> Keystroke monitoring must record only aggregate metrics (keystrokes/minute, pause lengths), never which keys were pressed. This is the line between "typing dynamics monitor" and "keylogger."</li>
-  <li><strong>Never read email/Slack content.</strong> Query message <em>counts</em> and <em>timestamps</em> only. Use metadata-only API calls.</li>
-  <li><strong>Track domains, not URLs.</strong> Browser data should record "twitter.com: 45 min" not full page URLs (which can reveal sensitive information).</li>
-  <li><strong>Local-first architecture.</strong> Store everything on the user's machine. Never upload to cloud without explicit consent. ActivityWatch's model is the template.</li>
-  <li><strong>California law (2025):</strong> New workplace surveillance regulations require 14-day written notice before monitoring employees. This applies if you ever deploy to a team. For self-use, it's less relevant.</li>
-  <li><strong>Encryption at rest.</strong> All collected data should be encrypted on disk. If the user's machine is compromised, a pre-built surveillance infrastructure is a gift to attackers.</li>
+  <li>Install ActivityWatch. Nothing else required &mdash; it's the backbone.</li>
+  <li>Set up the Apple Health iOS Shortcut (see <code>integrations/apple_health/SHORTCUT_SETUP.md</code>). Confirm daily JSON hits iCloud Drive.</li>
+  <li>Start <code>integrations/models/main.py</code>. The tick loop runs with just AW + Health + recovery log; Model&nbsp;B gets a degraded feature vector but still produces a meaningful E/S.</li>
+  <li>Tap the <code>/log</code> page a few times a day for outside / walk / with people.</li>
 </ul>
 
-<h3 id="tech-phases">Phased Build Plan</h3>
-<p>Designed to get a working prototype as fast as possible, then layer in complexity only where needed.</p>
-
-<h4>Phase 1: Data Collection (Week 1-2)</h4>
-<table class="result-table">
-<tr><th>Component</th><th>Tool</th><th>New Code</th></tr>
-<tr><td>App/window tracking</td><td>ActivityWatch (install + run)</td><td>0 lines</td></tr>
-<tr><td>Browser tracking</td><td>ActivityWatch browser extension</td><td>0 lines</td></tr>
-<tr><td>AI tool time</td><td>ActivityWatch (tracks time on chatgpt.com, claude.ai)</td><td>0 lines</td></tr>
-<tr><td>Email volume</td><td>Gmail API (<code>messages.list</code>, counts only)</td><td>~80 lines</td></tr>
-<tr><td>Energy score calculator</td><td>Python script querying ActivityWatch + Gmail data</td><td>~120 lines</td></tr>
-<tr><td>Data store</td><td>ActivityWatch's built-in SQLite + small CSV for Gmail</td><td>Trivial</td></tr>
-</table>
-<p><strong>Total: ~200 lines of Python. Two APIs (ActivityWatch local, Gmail).</strong></p>
-
-<h4>Phase 2: Interventions (Week 3-4)</h4>
-<table class="result-table">
-<tr><th>Intervention</th><th>Tool</th><th>New Code</th></tr>
-<tr><td>Notifications</td><td><code>desktop-notifier</code></td><td>~40 lines</td></tr>
-<tr><td>Slack DND</td><td>Slack <code>dnd.setSnooze</code> API</td><td>~20 lines</td></tr>
-<tr><td>Website blocking</td><td>Hosts file modification script</td><td>~30 lines</td></tr>
-<tr><td>Screen dimming</td><td>PyQt5 overlay OR OS-level Night Shift/f.lux</td><td>~50 lines or 0</td></tr>
-<tr><td>Physical battery output</td><td>Serial/WiFi to ESP32</td><td>~40 lines</td></tr>
-</table>
-<p><strong>Total: ~180 lines. One new API (Slack DND).</strong></p>
-
-<h4>Phase 3: Enrichment (Only if Phase 1-2 work)</h4>
+<h4>Phase 2 &mdash; Add scheduled load (Week 2&ndash;3)</h4>
 <ul class="findings">
-  <li>Add Anthropic/OpenAI usage API polling for precise token tracking</li>
-  <li>Add pynput keystroke timing (Windows only)</li>
-  <li>Add Zoom API for call duration</li>
-  <li>Add MCP servers for AI agent integration</li>
-  <li>Add network throttling and frame rate reduction (admin-gated)</li>
-  <li>Build richer PyQt5 overlay with break timer and progress visualization</li>
+  <li>Google Calendar OAuth: run <code>python -m integrations.gcal.gcal --auth</code>, accept the desktop consent screen. Credentials cache to <code>~/.psych-battery/gcal_token.json</code>.</li>
+  <li>Todoist personal token: drop into <code>secrets.env</code> as <code>TODOIST_TOKEN</code>.</li>
+  <li>Fill out the MCTQ (5 questions) and save the resulting <code>msf_sc_hours</code> to <code>state.json</code>. Model&nbsp;D picks it up on the next tick.</li>
 </ul>
 
-<div class="callout"><div class="label">Design Philosophy</div><p>This phased approach optimizes for <strong>"get clean data and validate the concept"</strong> rather than feature completeness. Phase 1 + Phase 2 together are about 380 lines of Python and touch only 3 external APIs. That's buildable in two weekends. Phase 3 is only worth doing after you've confirmed the core loop (data &rarr; energy score &rarr; intervention &rarr; recovery) actually works.</p></div>
+<h4>Phase 3 &mdash; Full instrumentation (Week 4+)</h4>
+<ul class="findings">
+  <li>Slack user token (<code>xoxp-...</code>) with the minimal scopes in <code>docs/data-sources.md</code>.</li>
+  <li>Zoom Server-to-Server OAuth app (Report scope only). Three secrets into <code>secrets.env</code>.</li>
+  <li>Flash an ESP32 (or configure the iPhone BLE app &mdash; see <code>integrations/proximity/iphone_beacon/README.md</code>). Add the UUID to <code>integrations/proximity/config.yaml</code>. Restart the scanner.</li>
+  <li>Optional: flip <code>SKIP_FOR_PHASE_1</code> to <code>False</code> in <code>keystrokes.py</code> on Windows only.</li>
+</ul>
+
+<h3 id="code-privacy">Privacy rules (hard-coded)</h3>
+<ul class="findings">
+  <li><strong>No message text, ever.</strong> Enforced per-module: <code>slack.py</code> iterates <code>conversations.history</code> but only touches <code>msg["ts"]</code> and <code>msg["user"]</code>, never <code>msg["text"]</code>.</li>
+  <li><strong>No key content.</strong> <code>keystrokes.py</code> uses <code>pynput</code>'s <em>on_press</em> but discards the key object after incrementing a counter in a per-minute SQLite bucket.</li>
+  <li><strong>Domains, not URLs.</strong> ActivityWatch's browser watcher is already domain-granular; we don't add a finer-grained watcher.</li>
+  <li><strong>Local-only by default.</strong> Everything is on-device: <code>~/.psych-battery/state.json</code>, <code>proximity-log.jsonl</code>, AW's SQLite. No cloud, no sync service, no telemetry.</li>
+  <li><strong>Secrets never printed.</strong> <code>main.py</code> only ever reads <code>os.environ[...]</code> and passes to the API client.</li>
+</ul>
+
+<h3 id="code-risks">Risks and known-broken modes</h3>
+<ul class="findings">
+  <li><strong>macOS permissions.</strong> ActivityWatch's window-title watcher needs Accessibility; <code>pynput</code> needs Input Monitoring. Both break silently on OS upgrades. Windows is the lower-friction dev environment for this stack.</li>
+  <li><strong>iOS background BLE throttling.</strong> Phone-as-beacon advertises reliably for ~5&ndash;10&nbsp;min then iOS suspends the app. Mitigations: use a Shortcut automation to re-launch daily, or accept intermittent detection and lower <code>rssi_threshold</code> to <code>-80</code>. See <code>integrations/proximity/iphone_beacon/README.md</code>.</li>
+  <li><strong>Slack admin approval.</strong> Work workspaces may block user tokens. Fallback: personal Slack only, or skip Slack entirely and let AW's "time in Slack app" absorb the signal.</li>
+  <li><strong>Shortcut drift.</strong> The Apple Health Shortcut dumps a file with a date-stamped name; if iCloud Drive isn't fully synced on the laptop, the watcher sees stale data. The watcher logs a warning if the newest file is &gt;36&nbsp;h old.</li>
+  <li><strong>Timestamp discipline.</strong> Every integration returns UTC-naive ISO timestamps; the normalizer does the timezone math. Mixing local and UTC across sources is the #1 source of "why is my 3&nbsp;pm meeting counting as 11&nbsp;pm?" bugs.</li>
+</ul>
 </div>
 
 <!-- ===== DATA SIGNALS ===== -->
@@ -1655,8 +1657,13 @@ CREATE TABLE score_5m     (ts INT PRIMARY KEY, E REAL, S REAL, F REAL, model TEX
 
 <!-- ===== SCORING ALGORITHMS ===== -->
 <div class="section" id="sec-salgorithm">
-<h2>Scoring Algorithms: Seven Ways to Weight the Battery</h2>
-<p>Once signals are flowing, the question becomes: <em>how do we turn a stream of events into a single number (or small vector) that drives a fill-level and color</em>? There is no settled answer in the literature. Different theoretical traditions yield different equations &mdash; some simple, some requiring weeks of per-user calibration. This tab lays out seven candidate models, grounded in psychology, cognitive science, and affective computing; names the tradeoffs; and recommends one as v1 with a clear upgrade path.</p>
+<h2>Scoring Algorithm: Two Stacked Models for the Battery</h2>
+<p>Once signals are flowing, the question becomes: <em>how do we turn a stream of events into a single number that drives fill-level and color</em>? There is no settled answer in the literature, and we considered seven candidates early in the design &mdash; linear sums, allostatic-load EMAs, multi-axis vectors, Kalman filters, and contextual bandits (those write-ups live in <code>docs/</code> for later). For v1, we ship two models stacked together:</p>
+<ul class="findings">
+  <li><strong>Model&nbsp;B</strong> &mdash; a two-compartment dynamical model of Energy&nbsp;(E) and Stress&nbsp;(S) with coupled ODEs. This is the core. It takes the feature vector from the integrations and advances the state every 5&nbsp;min.</li>
+  <li><strong>Model&nbsp;D</strong> &mdash; a circadian + ultradian prior that defines <em>what this user's expected energy is right now</em>, given their chronotype. Model&nbsp;B's E is an additive deviation on top of this baseline.</li>
+</ul>
+<p>The display reads <code>E_display = clip01(E_rest_now + (E &minus; 70))</code> &mdash; Model&nbsp;D sets the floor, Model&nbsp;B modulates above it.</p>
 
 <div class="slide-fig"><img src="/figures/battery/circumplex.svg" alt="Russell circumplex with Energy, Stress, Fulfillment placed on valence-arousal plane" onclick="openLightbox(this)"><div class="caption">Russell's valence &times; arousal circumplex. "Energy," "stress," and "fulfillment" sit in distinct quadrants. A single scalar cannot preserve this geometry &mdash; which is why several of the models below output a vector, not a number.</div></div>
 
@@ -1671,16 +1678,12 @@ CREATE TABLE score_5m     (ts INT PRIMARY KEY, E REAL, S REAL, F REAL, model TEX
 <div class="toc"><ul>
   <li><a href="#alg-found">Theoretical foundations</a></li>
   <li><a href="#alg-principles">Five design principles</a></li>
-  <li><a href="#alg-a">Model A: Linear weighted sum (simplest baseline)</a></li>
-  <li><a href="#alg-b">Model B: Two-compartment dynamical model &mdash; <strong>recommended v1</strong></a></li>
-  <li><a href="#alg-c">Model C: Allostatic load EMA</a></li>
+  <li><a href="#alg-b">Model B: Two-compartment dynamical model</a></li>
   <li><a href="#alg-d">Model D: Circadian + ultradian prior</a></li>
-  <li><a href="#alg-e">Model E: Multi-axis vector (E, S, F)</a></li>
-  <li><a href="#alg-f">Model F: Bayesian Kalman filter</a></li>
-  <li><a href="#alg-g">Model G: RL / contextual bandit (speculative)</a></li>
-  <li><a href="#alg-compare">Comparison matrix</a></li>
+  <li><a href="#alg-stack">How B and D stack</a></li>
   <li><a href="#alg-personal">Personalization tiers (cold &rarr; warm &rarr; stable)</a></li>
   <li><a href="#alg-roadmap">v1 roadmap &amp; honest limitations</a></li>
+  <li><a href="#alg-future">Future models (F and G): deep dives in <code>/docs</code></a></li>
 </ul></div>
 </div></details>
 
@@ -1699,7 +1702,7 @@ CREATE TABLE score_5m     (ts INT PRIMARY KEY, E REAL, S REAL, F REAL, model TEX
   <li><strong>Chronotype (Facer-Childs et al., 2018).</strong> Lark peak 13:52, owl peak 20:59 &mdash; 7-hour spread in peak cognition. Motivates per-user circadian prior.</li>
   <li><strong>DRAMMA recovery (Newman, Tay &amp; Diener, 2014).</strong> Six distinct recovery ingredients with different weights. Motivates typed recovery events in Model B.</li>
   <li><strong>Self-Determination Theory (Deci &amp; Ryan, 2000).</strong> Autonomy, competence, relatedness &rarr; intrinsic motivation &rarr; Fulfillment axis.</li>
-  <li><strong>Allostatic Load (McEwen, 1998).</strong> Repeated activation wears physiology down; slow time constants (days&ndash;weeks). Motivates Model C's EMA on stress.</li>
+  <li><strong>Allostatic Load (McEwen, 1998).</strong> Repeated activation wears physiology down; slow time constants (days&ndash;weeks). Motivates the slow time constant (&tau;<sub>S</sub> &asymp; 3&nbsp;d) on Model&nbsp;B's S compartment.</li>
   <li><strong>Holt-Lunstad social connection meta-analyses (2010, 2015).</strong> Social isolation OR 1.50 for mortality &mdash; larger than smoking. Motivates +++ weight on affiliation.</li>
   <li><strong>Zoom Fatigue (Bailenson, 2021; Fauville ZEF scale).</strong> Hyper-gaze, mirror anxiety, reduced mobility specifically deplete beyond equivalent in-person meeting time. Motivates a video-specific drain coefficient.</li>
   <li><strong>Context switching (Mark et al., 2005 &rarr; 2008 &rarr; 2023).</strong> The popular "23-minute" figure comes from Mark 2005; more recent work shows distribution is heavy-tailed. Motivates convex cost per switch above a daily threshold.</li>
@@ -1707,7 +1710,7 @@ CREATE TABLE score_5m     (ts INT PRIMARY KEY, E REAL, S REAL, F REAL, model TEX
   <li><strong>HRV / Neurovisceral Integration (Thayer, 2009).</strong> Vagal tone indexes executive-function capacity. Motivates HRV as the most direct E-axis input when available.</li>
   <li><strong>Attention Restoration Theory (Kaplan, 1995; Berman et al., 2008).</strong> 20 min in greenspace restores measurable executive function. Motivates outdoor/daylight minutes as a high-weight recovery event.</li>
   <li><strong>Sleep debt dose-response (Van Dongen et al., 2003).</strong> Chronic partial sleep restriction produces cognitive deficits equivalent to acute total deprivation, <em>without subjective awareness</em>. Motivates sleep debt as an S-load that we trust over the user's self-report.</li>
-  <li><strong>Russell circumplex (1980).</strong> Affect lives on a valence &times; arousal plane; energy/stress/fulfillment are geometrically distinct. Motivates multi-axis Model E over any single scalar.</li>
+  <li><strong>Russell circumplex (1980).</strong> Affect lives on a valence &times; arousal plane; energy/stress/fulfillment are geometrically distinct. Motivates keeping E and S as separate state variables rather than collapsing to one scalar.</li>
 </ol>
 </div></details>
 
@@ -1723,37 +1726,7 @@ CREATE TABLE score_5m     (ts INT PRIMARY KEY, E REAL, S REAL, F REAL, model TEX
 </ol>
 </div></details>
 
-<h3 id="alg-a">Model A: Linear weighted sum with exponential decay</h3>
-<details class="section-fold"><summary>The simplest useful baseline &mdash; one scalar, fixed weights, exponential forgetting</summary>
-<div class="section-body">
-<div class="slide-fig"><img src="/figures/battery/model_a_linear.svg" alt="Model A: linear weighted sum with exponential decay, shown as a scored curve over a workday with drain and recover events" onclick="openLightbox(this)"><div class="caption">Model A: each event bumps the score; between events it decays. A single scalar, transparent but unaware of chronotype or stress accumulation.</div></div>
-<p><strong>Equation:</strong> <code>E(t) = E(t-&Delta;t) &middot; exp(-&Delta;t/&tau;) + &Sigma;<sub>i</sub> w<sub>i</sub> &middot; x<sub>i</sub>(t)</code></p>
-<p>where <code>&tau;</code> is a half-life (say 2 h), <code>x<sub>i</sub></code> are event magnitudes (meeting-minutes, walk-minutes, etc.), and <code>w<sub>i</sub></code> are signed weights (negative for drains, positive for restorers). Clipped to [0, 100].</p>
-
-<p><strong>Pros:</strong> trivially implementable, fully interpretable ("your battery dropped 8 because of a 60-min video meeting"), near-zero calibration needed. Good for a tech demo in week 1.</p>
-<p><strong>Cons:</strong> ignores all five design principles except #5. No personalization, no circadian prior, no stress axis, no type-weighted recovery.</p>
-
-<details class="code-fold"><summary>Python reference</summary>
-<pre class="code-block"><code>def update_score_A(E, events, dt_min, tau_min=120, weights=W):
-    # decay
-    E *= math.exp(-dt_min / tau_min)
-    # add/subtract events
-    for ev in events:
-        E += weights[ev.type] * ev.magnitude
-    return max(0.0, min(100.0, E))
-
-W = {
-    'meeting_video_min': -0.30, 'meeting_f2f_min': -0.15,
-    'context_switch':    -0.40, 'after_hours_msg':  -0.20,
-    'focus_block_min':   +0.25, 'walk_outside_min': +0.80,
-    'social_voice_min':  +0.40, 'task_completed':   +1.50,
-    'sleep_debt_h':      -5.00,
-}</code></pre></details>
-
-<p><strong>Verdict:</strong> ship as Model A for the first week as a sanity check and to sanity-check the display pipeline. Do not leave it in production; it will give chronotype-wrong feedback to half the users.</p>
-</div></details>
-
-<h3 id="alg-b">Model B: Two-compartment dynamical model <span style="color:#0066cc">&#9733; recommended v1</span></h3>
+<h3 id="alg-b">Model B: Two-compartment dynamical model <span style="color:#0066cc">&#9733; the core</span></h3>
 <details class="section-fold" open><summary>Energy and Stress as coupled state variables with different time constants</summary>
 <div class="section-body">
 <p>Grounded in Effort-Recovery + Allostatic Load + JD-R. Two state variables, E and S, each with their own dynamics. Stress taxes energy; energy recovers on hours, stress unwinds on days.</p>
@@ -1802,20 +1775,6 @@ dS/dt = load(t)    &minus; &beta; &middot; detach(t)              # S has slow t
 <p><strong>Cons:</strong> still no circadian prior &mdash; it will be wrong in the morning for owls and late for larks. Fix by stacking Model D's prior underneath (see <a href="#alg-d">below</a>).</p>
 </div></details>
 
-<h3 id="alg-c">Model C: Allostatic load EMA</h3>
-<details class="section-fold"><summary>Stress-centric: a slow-moving exponential moving average of stressor load</summary>
-<div class="section-body">
-<div class="slide-fig"><img src="/figures/battery/model_c_allostatic.svg" alt="Model C: daily stressor-score bars over two weeks with a smooth exponential-moving-average curve overlaid" onclick="openLightbox(this)"><div class="caption">Model C: daily stressor scores (gray bars) feed a multi-day EMA (red line). A single bad day barely moves it; a bad week pushes it across the chronic-load threshold.</div></div>
-<p>A minimal version of the S-compartment alone. Useful if you want a single "am I heading for burnout" scalar without tracking short-term energy. Mechanism: multi-day EMA of a stressor vector &mdash; sleep debt, after-hours, video load, HRV trend, no-detachment days.</p>
-
-<pre class="code-block"><code>AL(t) = &lambda; &middot; AL(t&minus;1d) + (1&minus;&lambda;) &middot; stressor_score(t)
-# &lambda; = 0.85 &rarr; half-life ~ 4 days</code></pre>
-
-<p><strong>Display mapping:</strong> battery color (green/amber/red) is driven by AL; fill level is separate and driven by Model A or B energy.</p>
-<p><strong>Pros:</strong> captures the McEwen "chronic load" mechanism, which is what burnout research actually tracks. Drift is slow &mdash; a single bad day doesn't panic the display.</p>
-<p><strong>Cons:</strong> doesn't react fast enough to acute events. Alone, it can't drive a real-time battery. It's a complement to Model B, not a replacement.</p>
-</div></details>
-
 <h3 id="alg-d">Model D: Circadian + ultradian prior</h3>
 <details class="section-fold"><summary>Personalized baseline curve; signals are weighted as deviations from it</summary>
 <div class="section-body">
@@ -1840,213 +1799,71 @@ def update_score_D(E_obs, t, chronotype, features):
 <p><strong>Cons:</strong> a prior alone isn't a model &mdash; this should stack <em>under</em> Model B, not replace it.</p>
 </div></details>
 
-<h3 id="alg-e">Model E: Multi-axis vector (E, S, F)</h3>
-<details class="section-fold"><summary>Three distinct scalars mapped to three distinct display features</summary>
+<h3 id="alg-stack">How B and D stack</h3>
+<details class="section-fold" open><summary>D sets the floor; B modulates above it</summary>
 <div class="section-body">
-<div class="slide-fig"><img src="/figures/battery/model_e_vector.svg" alt="Model E: three stacked tracks showing Energy, Stress, and Fulfillment evolving independently across a workday, with a battery display decoding panel" onclick="openLightbox(this)"><div class="caption">Model E: three independent tracks across a workday. The right panel shows how E drives fill, S drives hue and pulse, and F drives the accent glow &mdash; one object, three channels.</div></div>
-<p>Grounded in Russell's circumplex + SDT + Progress Principle. Rather than collapse to one number, the state is a 3-vector &mdash; Energy, Stress, Fulfillment &mdash; each with its own update rule.</p>
+<p>Model&nbsp;B and Model&nbsp;D answer two different questions. D answers: <em>given the clock and this user's chronotype, what's the expected energy right now if nothing unusual happened?</em> B answers: <em>given what did happen (meetings, focus, sleep, walks), how much does state deviate from 70?</em> Stacking is additive:</p>
 
-<pre class="code-block"><code>def update_vector_E(state, features, dt_min):
-    E, S, F = state
-    E = update_E_with_circadian_prior(E, features, dt_min)   # from Model D+B
-    S = update_S_allostatic(S, features, dt_min)             # from Model C
-    F_delta = (features['tasks_done_hi_prio']   * 3.0
-             + features['mastery_minutes']      * 0.05
-             + features['meaning_tagged_min']   * 0.08
-             + features['social_voice_min']     * 0.10
-             - features['carry_over_tasks']     * 1.0)
-    F = max(0.0, min(100.0, F*0.95 + F_delta))  # gentle decay toward 0
-    return (E, S, F)
+<pre class="code-block"><code>def display_energy(E, now, chronotype):
+    d_baseline = expected_energy(now, chronotype)   # from Model D
+    raw = d_baseline + (E - 70)                     # B's deviation
+    return max(0.0, min(100.0, raw))                # clip to [0,100]</code></pre>
 
-def display_decode(E, S, F):
-    return {
-      'fill_level':  E,                              # battery fill
-      'hue_shift':   min(1.0, S/60),                 # amber-to-red
-      'pulse_speed': 0 if S&lt;40 else (S-40)/60,       # 0..1 pulse as S climbs
-      'accent_glow': max(0, min(1, (F-50)/50)),      # secondary LED
-      'alert':       (E&lt;20 and S&gt;70),                # danger state
-    }</code></pre>
+<p>Why <code>E &minus; 70</code>? Because in Model&nbsp;B, 70 is the homeostatic rest value &mdash; a fully recovered, unstressed user at the middle of their chronotype should have <code>E &asymp; 70</code>. Subtracting it gives a pure "delta from homeostasis" number that Model&nbsp;D's baseline can ride on. If the user had a 90-minute video meeting (dropping E to 55), the display shows <code>D(now) + (55 &minus; 70) = D(now) &minus; 15</code>. For a lark at 2&nbsp;pm that's ~80 &minus; 15 = 65. For the same event for an owl at 2&nbsp;pm, D is closer to 50, so the display lands at ~35 &mdash; the same drain hurts more when the prior is already low.</p>
 
-<p><strong>Pros:</strong> matches the psychology. Distinguishes "tired but content" (low E, low S, high F &mdash; a good Friday afternoon) from "tired and depleted" (low E, high S, low F &mdash; a bad Thursday). Only Model E can render that difference.</p>
-<p><strong>Cons:</strong> harder to explain to users in one sentence. The hardware has to support the multi-channel display (we planned for this: fill + hue + accent).</p>
-</div></details>
+<p>This stacking is also what makes the battery <em>chronotype-aware without requiring a different code path per user</em>. Model&nbsp;B's equations and weights are identical for everyone; Model&nbsp;D's <code>peak_h</code> is the only personalized piece, set once from the 5-question MCTQ. See <code>docs/models-b-and-d-encoding.md</code> for the authoritative derivation.</p>
 
-<h3 id="alg-f">Model F: Bayesian Kalman filter</h3>
-<details class="section-fold"><summary>Treat E and S as latent states; signals are noisy observations</summary>
-<div class="section-body">
-<div class="slide-fig"><img src="/figures/battery/model_f_kalman.svg" alt="Model F: Kalman filter showing noisy observations, a latent true-E curve, and the posterior mean with a shaded uncertainty band" onclick="openLightbox(this)"><div class="caption">Model F: a latent state with an explicit uncertainty band. The band widens when signals are sparse (no wearable, logged-off) and tightens when many sources agree.</div></div>
-<p>Treat E, S as latent states evolving per Model B's linear dynamics. Each signal (HRV, focus-minutes, meeting-density, etc.) is a noisy observation of a linear combination of E and S. Standard Kalman update gives a posterior + uncertainty.</p>
-
-<details class="code-fold"><summary>Numpy sketch</summary>
-<pre class="code-block"><code>import numpy as np
-# state x = [E, S]
-def kalman_update_F(x, P, z, A, H, Q, R):
-    # predict
-    x = A @ x
-    P = A @ P @ A.T + Q
-    # update with observation z
-    y = z - H @ x
-    S = H @ P @ H.T + R
-    K = P @ H.T @ np.linalg.inv(S)
-    x = x + K @ y
-    P = (np.eye(2) - K @ H) @ P
-    return x, P</code></pre></details>
-
-<p><strong>Pros:</strong> explicit uncertainty (the battery could dim its certainty: a crisp fill when confident, a fuzzy one when signals are sparse). Gracefully handles missing signals (e.g. wearable not worn today).</p>
-<p><strong>Cons:</strong> needs per-user variance estimates to work well &mdash; that's weeks of passive data. Less legible than Model B.</p>
-</div></details>
-
-<h3 id="alg-g">Model G: RL / contextual bandit (speculative)</h3>
-<details class="section-fold"><summary>Let the device learn which interventions actually restore <em>this user's</em> energy</summary>
-<div class="section-body">
-<div class="slide-fig"><img src="/figures/battery/model_g_rl.svg" alt="Model G: contextual-bandit loop with state, policy, action, environment, reward, and a regret curve flattening over twelve weeks" onclick="openLightbox(this)"><div class="caption">Model G: the classic RL loop adapted to this domain. Actions are nudges; reward is downstream energy change. Regret falls slowly as the policy learns which interventions actually work for this particular user.</div></div>
-<p>Concept: after N weeks of data, train a contextual-bandit policy that suggests interventions ("take a walk now"? "close Slack for 30 min"?) and observes downstream E-axis change as reward. Interventions are arms; context is the current state vector.</p>
-<p><strong>Pros:</strong> per-user personalization without asking the user anything. In principle, the device gets smarter the longer you own it.</p>
-<p><strong>Cons:</strong> only honest if we have a closed intervention loop on the device (nudge &rarr; behavior &rarr; measured change). Also ethically loaded &mdash; nudging is a design decision, not a data-science decision.</p>
-<p><strong>Verdict:</strong> v3 or later. Not a day-one priority. Worth mentioning so the architecture doesn't foreclose it.</p>
-</div></details>
-
-<h3 id="alg-compare">Comparison matrix</h3>
-<details class="section-fold" open><summary>Tradeoffs at a glance</summary>
-<div class="section-body">
-<div class="algo-matrix-wrap">
-<table class="algo-matrix">
-<thead><tr>
-  <th style="min-width:180px">Model</th>
-  <th style="width:95px">Complexity</th>
-  <th style="width:95px">Interpretable</th>
-  <th style="min-width:140px">Data needed</th>
-  <th style="min-width:130px">Personalization</th>
-  <th style="min-width:110px">Axes</th>
-  <th style="min-width:170px">Grounded in</th>
-  <th style="min-width:170px">Use for</th>
-</tr></thead>
-<tbody>
-<tr>
-  <td><span class="algo-name"><span class="algo-letter">A</span>Linear sum<span class="algo-sub">weighted add/subtract with decay</span></span></td>
-  <td><span class="star-rating">&#9679;<span class="off">&#9679;&#9679;&#9679;&#9679;</span></span></td>
-  <td><span class="star-rating">&#9733;&#9733;&#9733;&#9733;&#9733;</span></td>
-  <td>Day 1</td>
-  <td>None</td>
-  <td><span class="axis-chip axis-none">scalar</span></td>
-  <td>Heuristic only</td>
-  <td>Week-1 sanity check of display pipeline</td>
-</tr>
-<tr class="algo-recommended">
-  <td><span class="algo-name algo-rec"><span class="algo-letter">B</span>Two-compartment<span class="rec-badge">V1</span><span class="algo-sub">coupled ODE, E fast, S slow</span></span></td>
-  <td><span class="star-rating">&#9679;&#9679;&#9679;<span class="off">&#9679;&#9679;</span></span></td>
-  <td><span class="star-rating">&#9733;&#9733;&#9733;&#9733;<span class="off">&#9733;</span></span></td>
-  <td>Day 1</td>
-  <td>Light (weights)</td>
-  <td><span class="axis-chip axis-E">E</span><span class="axis-chip axis-S">S</span></td>
-  <td>Effort-Recovery, JD-R, Allostatic Load</td>
-  <td><strong>v1 shipping model</strong></td>
-</tr>
-<tr>
-  <td><span class="algo-name"><span class="algo-letter">C</span>Allostatic EMA<span class="algo-sub">multi-day exponential average</span></span></td>
-  <td><span class="star-rating">&#9679;&#9679;<span class="off">&#9679;&#9679;&#9679;</span></span></td>
-  <td><span class="star-rating">&#9733;&#9733;&#9733;&#9733;&#9733;</span></td>
-  <td>1&ndash;2 weeks</td>
-  <td>None at start</td>
-  <td><span class="axis-chip axis-S">S</span></td>
-  <td>McEwen allostatic load</td>
-  <td>Color layer, stacks on top of B</td>
-</tr>
-<tr>
-  <td><span class="algo-name"><span class="algo-letter">D</span>Circadian prior<span class="algo-sub">lark/owl baseline + BRAC ripples</span></span></td>
-  <td><span class="star-rating">&#9679;&#9679;<span class="off">&#9679;&#9679;&#9679;</span></span></td>
-  <td><span class="star-rating">&#9733;&#9733;&#9733;&#9733;&#9733;</span></td>
-  <td>1 question (MCTQ)</td>
-  <td>Chronotype</td>
-  <td><span class="axis-chip axis-E">E prior</span></td>
-  <td>Kleitman, Facer-Childs</td>
-  <td>Prior layer, stacks under B</td>
-</tr>
-<tr>
-  <td><span class="algo-name"><span class="algo-letter">E</span>Three-axis vector<span class="algo-sub">separate E, S, F scalars</span></span></td>
-  <td><span class="star-rating">&#9679;&#9679;&#9679;<span class="off">&#9679;&#9679;</span></span></td>
-  <td><span class="star-rating">&#9733;&#9733;&#9733;&#9733;<span class="off">&#9733;</span></span></td>
-  <td>Day 1 + completions</td>
-  <td>Per-axis</td>
-  <td><span class="axis-chip axis-E">E</span><span class="axis-chip axis-S">S</span><span class="axis-chip axis-F">F</span></td>
-  <td>Russell, SDT, Progress Principle</td>
-  <td>v2 &mdash; accent indicator needed</td>
-</tr>
-<tr>
-  <td><span class="algo-name"><span class="algo-letter">F</span>Kalman filter<span class="algo-sub">Bayesian latent-state update</span></span></td>
-  <td><span class="star-rating">&#9679;&#9679;&#9679;&#9679;<span class="off">&#9679;</span></span></td>
-  <td><span class="star-rating">&#9733;&#9733;&#9733;<span class="off">&#9733;&#9733;</span></span></td>
-  <td>2&ndash;4 weeks</td>
-  <td>Per-user variances</td>
-  <td><span class="axis-chip axis-E">E</span><span class="axis-chip axis-S">S</span></td>
-  <td>Bayesian state-space</td>
-  <td>v3 upgrade to B</td>
-</tr>
-<tr>
-  <td><span class="algo-name"><span class="algo-letter">G</span>RL bandit<span class="algo-sub">contextual nudge-policy learner</span></span></td>
-  <td><span class="star-rating">&#9679;&#9679;&#9679;&#9679;&#9679;</span></td>
-  <td><span class="star-rating">&#9733;&#9733;<span class="off">&#9733;&#9733;&#9733;</span></span></td>
-  <td>Months + closed loop</td>
-  <td>Full</td>
-  <td><span class="axis-chip axis-none">any</span></td>
-  <td>Contextual bandits</td>
-  <td>Research direction</td>
-</tr>
-</tbody>
-</table>
-</div>
-<p><strong>Recommended architecture:</strong> ship Model B as the core, stack Model D's chronotype prior underneath, layer Model C's multi-day EMA to drive color separately from fill, and leave a Model E hook so the secondary F-axis indicator is populated from day one. That composite is what v1 should be.</p>
+<p>Stress (S) is not stacked; it rides independently and drives display hue (amber as S crosses 40, red above 60) and the slow red-pulse alert when low-E &amp; high-S coincide. The rationale is that chronotype shouldn't change your chronic-stress response &mdash; only your acute energy curve.</p>
 </div></details>
 
 <h3 id="alg-personal">Personalization tiers</h3>
 <details class="section-fold"><summary>Cold start &rarr; warm &rarr; stable, with one-time calibration that stays in scope</summary>
 <div class="section-body">
-<p>The user asked for "one-time user-report for calibration" to be acceptable. That gives us three tiers:</p>
+<p>Three tiers, with a single 90-second onboarding survey as the only "user report" allowed in the loop:</p>
 
 <h4>Cold start (day 0 &mdash; one 90-second survey)</h4>
 <ul class="findings">
-  <li><strong>MCTQ (Munich Chronotype Questionnaire, short form):</strong> 5 items, chronotype in minutes. Sets Model D's <code>peak_h</code>. Validated Roenneberg et al.</li>
-  <li><strong>BFI-2-S Extraversion subscale (6 items, ~40 s):</strong> high extraversion &rarr; upweight social-affiliation recovery; low extraversion &rarr; upweight solo recovery.</li>
-  <li><strong>UWES-3 engagement baseline (3 items):</strong> gives a fulfillment-scale zero-point so the F-axis isn't stuck at the user's average.</li>
+  <li><strong>MCTQ (Munich Chronotype Questionnaire, short form):</strong> 5 items, yields <code>MSF_sc</code> in hours. Sets Model&nbsp;D's chronotype bucket (lark&nbsp;&lt;3.5, intermediate, owl&nbsp;&ge;5.5). Validated in Roenneberg et&nbsp;al.</li>
   <li><strong>Work pattern declarations:</strong> typical start/end hours, remote/hybrid/office. Sets the "after-hours" threshold individually.</li>
+  <li><strong>(Optional) BFI-2-S Extraversion, UWES-3 engagement:</strong> not used by v1 but captured for future per-user weight tuning.</li>
 </ul>
 
 <h4>Warm phase (days 1&ndash;14)</h4>
 <ul class="findings">
-  <li>Per-user mean and SD for every feature are learned (meeting_density, msgs_per_hour, focus_block_length, HRV, etc.).</li>
-  <li>All features are z-scored against the user's own baseline from here on.</li>
-  <li>The weights in Model B stay at shipped defaults &mdash; we don't have enough labels yet to re-fit.</li>
+  <li>Per-user mean and SD for every raw signal are learned by the feature normalizer (meeting density, msgs/hour, focus-block length, HRV, etc.).</li>
+  <li>From here on, every signal is z-scored against the user's own baseline &mdash; "meeting-dense day" means dense <em>for you</em>.</li>
+  <li>Model&nbsp;B's weights stay at shipped defaults; we don't yet have labels to re-fit.</li>
 </ul>
 
 <h4>Stable phase (day 14+)</h4>
 <ul class="findings">
-  <li>Periodic (weekly) reweighting of Model B coefficients, if we have any label signal at all (e.g. the user occasionally taps a "was this about right?" button on the battery).</li>
-  <li>Kalman (Model F) becomes viable: per-user observation noise and process noise are estimable.</li>
+  <li>Periodic (weekly) reweighting of Model&nbsp;B coefficients, once the user occasionally taps a "was this about right?" button.</li>
+  <li>Kalman upgrade (see <code>docs/models-f-and-g.md</code>) becomes viable: per-user observation noise and process noise are estimable from the accumulated data.</li>
   <li>Optional: chronotype can be refined from observed typing/activity rhythm rather than self-report.</li>
 </ul>
 </div></details>
 
 <h3 id="alg-roadmap">v1 roadmap &amp; honest limitations</h3>
-<details class="section-fold" open><summary>Six shipping steps and what we know will be wrong at first</summary>
+<details class="section-fold" open><summary>Three shipping phases and what will be wrong at first</summary>
 <div class="section-body">
 <ol class="findings">
-  <li><strong>Week 1:</strong> Model A + 7-signal MVP stack. Validate the data pipeline and display path end-to-end. Accept that the scores themselves will be noisy.</li>
-  <li><strong>Week 2:</strong> Swap in Model B with shipped default coefficients. Stack Model D's chronotype prior underneath (ask for MCTQ at onboarding).</li>
-  <li><strong>Week 3&ndash;4:</strong> Start computing per-user z-scores for every feature; begin driving Model C's color layer from allostatic EMA, decoupled from fill level.</li>
-  <li><strong>Week 5&ndash;6:</strong> Populate Model E's F-axis from task completions + mastery minutes; wire to the accent indicator.</li>
-  <li><strong>Month 2+:</strong> Add a single "was this right?" button. Accumulate labels. Begin coefficient refitting.</li>
-  <li><strong>Month 3+:</strong> Upgrade to Model F (Kalman) per user with enough data. Consider Model G research pilot.</li>
+  <li><strong>Phase&nbsp;1 (Week&nbsp;1):</strong> Boot Model&nbsp;B with ActivityWatch + Apple Health + the recovery-log form only. Model&nbsp;D runs with a declared chronotype from day 0. Display reads <code>E_display</code>; S drives color. Missing sources are handled by the normalizer's fallbacks.</li>
+  <li><strong>Phase&nbsp;2 (Week&nbsp;2&ndash;3):</strong> Add Google Calendar + Todoist. Per-user baselines begin accumulating. Display gets noticeably more responsive to meeting load vs. focus blocks.</li>
+  <li><strong>Phase&nbsp;3 (Week&nbsp;4+):</strong> Add Slack + Zoom + proximity (BLE beacon or iPhone). Baselines are now stable; weights start shifting from shipped defaults toward per-user values.</li>
 </ol>
 
 <div class="callout"><div class="label">What we know will be imperfect on day 1</div>
 <ul class="findings">
-  <li><strong>Chronotype self-report is noisy.</strong> MCTQ has test-retest of ~0.8; some users will be miscategorized.</li>
-  <li><strong>Default coefficients won't fit you perfectly.</strong> Expect 2&ndash;4 weeks before the battery "feels right."</li>
-  <li><strong>Wearable-less mode is a degraded mode.</strong> Without HRV, the S-axis is estimated from behavior alone and will lag acute changes.</li>
-  <li><strong>Fulfillment is the hardest axis to measure passively.</strong> Task completions are a proxy; we'll under-capture creative and relational meaning.</li>
-  <li><strong>Chronic stress and burnout are not the same as "bad day."</strong> Model C's slow EMA helps, but we should not claim clinical validity; the device is a research prototype.</li>
+  <li><strong>Chronotype self-report is noisy.</strong> MCTQ has test-retest of ~0.8; some users will be miscategorized until enough passive rhythm data accumulates.</li>
+  <li><strong>Default coefficients won't fit you perfectly.</strong> Expect 2&ndash;4 weeks before the battery "feels right." The goal for week&nbsp;1 is "plausibly correlated with mood," not "accurate."</li>
+  <li><strong>Wearable-less mode is degraded.</strong> Without HRV, the S-axis is estimated from behavior alone (sleep debt from AW activity hours, after-hours ratio, fragmentation) and will lag acute changes by 12&ndash;24&nbsp;h.</li>
+  <li><strong>Meeting-type heuristic is approximate.</strong> GCal "has a Zoom/Meet URL" = video, else in-person. Hybrid meetings, dial-ins without URLs, and walking meetings are mis-typed.</li>
+  <li><strong>Not a clinical tool.</strong> This is a research prototype for self-experimentation. It does not diagnose burnout or depression.</li>
 </ul></div>
 </div></details>
+
+<h3 id="alg-future">Future models (F and G)</h3>
+<p>The v0 design also explored five other candidates (linear sum, allostatic EMA, multi-axis vector, Kalman, contextual bandit). For v1 we're shipping only B and D to keep the moving parts small. The Kalman filter (F) and contextual bandit (G) are the two upgrades most likely to earn their complexity once we have ~6&nbsp;weeks of per-user data. Full pedagogical write-ups &mdash; what they are, when they help, how they'd plug into the existing code &mdash; live at <code>docs/models-f-and-g.md</code>, ready for a future tab.</p>
 
 </div>
 
@@ -2846,7 +2663,7 @@ log = logging.getLogger(<span class="str">"charge_sender"</span>)
 </details>
 <details class="section-fold"><summary>5.3 Connect to the Psych_Battery Energy Score</summary>
 <div class="section-body">
-<p>This is where Tech Stack meets Build Guide. The same <code>energy_score_to_battery.py</code> loop from the E-Ink guide works unchanged, but for the LED build you can poll more aggressively because there's no e-ink refresh-cycle budget to conserve.</p>
+<p>This is where the Coding Plan meets the Build Guide. The same <code>energy_score_to_battery.py</code> loop from the E-Ink guide works unchanged, but for the LED build you can poll more aggressively because there's no e-ink refresh-cycle budget to conserve.</p>
 
 <details class="code-fold"><summary>energy_score_to_battery.py &mdash; LED-tuned loop</summary>
 <pre class="code-block"><span class="str">"""
@@ -3892,7 +3709,7 @@ log = logging.getLogger(<span class="str">"charge_sender"</span>)
 </details>
 <details class="section-fold"><summary>5.3 Connect to the Psych_Battery Energy Score</summary>
 <div class="section-body">
-<p>This is where Tech Stack meets Build Guide. Here's a minimal example that queries ActivityWatch, computes an energy score, and pushes it to the display:</p>
+<p>This is where the Coding Plan meets the Build Guide. Here's a minimal example that queries ActivityWatch, computes an energy score, and pushes it to the display:</p>
 
 <details class="code-fold"><summary>energy_score_to_battery.py &mdash; the core loop</summary>
 <pre class="code-block"><span class="str">"""
@@ -4215,7 +4032,7 @@ RECHARGE_IDLE_PER_MIN = <span class="num">0.4</span>    <span class="cmt"># AFK/
 <tr><td>BUSY</td><td>GPIO 48</td></tr>
 </table>
 
-<p>Free GPIOs (verify against the board's schematic before wiring anything): typically GPIO 1&ndash;10 and 17&ndash;21 are available on the 2&times;10 expansion header for sensors, LEDs, or the color-change layer discussed in the Tech Stack tab.</p>
+<p>Free GPIOs (verify against the board's schematic before wiring anything): typically GPIO 1&ndash;10 and 17&ndash;21 are available on the 2&times;10 expansion header for sensors, LEDs, or the color-change layer discussed in the Coding Plan tab.</p>
 </div>
 </details>
 

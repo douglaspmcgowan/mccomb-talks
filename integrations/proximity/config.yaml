@@ -1,0 +1,15 @@
+# Proximity beacons to watch. Fill in UUIDs after flashing ESP32 / configuring iPhone.
+#
+# RSSI threshold is in dBm — closer = less negative. -70 ≈ within 5 m indoors.
+# Calibrate per device on first run with a known-distance test.
+
+beacons:
+  # Uncomment after flashing the second battery
+  # - uuid: "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"
+  #   label: "second_battery"
+  #   rssi_threshold: -70
+
+  # Uncomment after configuring the iPhone beacon
+  # - uuid: "12345678-1234-1234-1234-1234567890ab"
+  #   label: "iphone"
+  #   rssi_threshold: -75

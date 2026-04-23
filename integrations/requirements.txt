@@ -1,0 +1,30 @@
+# Psych Battery — Python dependencies
+
+# Core
+python-dotenv>=1.0.0
+requests>=2.31.0
+pyyaml>=6.0
+
+# ActivityWatch
+aw-client>=0.5.12
+
+# Google Calendar
+google-auth>=2.23.0
+google-auth-oauthlib>=1.1.0
+google-api-python-client>=2.100.0
+
+# Slack
+slack-sdk>=3.26.0
+
+# Bluetooth Low Energy (proximity)
+bleak>=0.21.0
+
+# Server (for /state, /log endpoints)
+flask>=3.0.0
+
+# Keystrokes (optional, disabled by default)
+pynput>=1.7.6
+
+# Model fitting (for Phase 2)
+numpy>=1.26.0
+scipy>=1.11.0

@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Psych Battery — recovery log</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, system-ui, sans-serif;
+    max-width: 480px;
+    margin: 2rem auto;
+    padding: 0 1rem;
+    background: #fafafa;
+    color: #1a1a1a;
+  }
+  h1 { font-size: 1.4rem; margin-bottom: 0.5rem; }
+  p.subtitle { color: #666; margin-top: 0; font-size: 0.9rem; }
+  .kind-group {
+    margin: 1.5rem 0;
+    padding: 1rem;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  }
+  .kind-title { font-weight: 600; margin-bottom: 0.5rem; }
+  .btns { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+  button {
+    font-size: 0.95rem;
+    padding: 0.7rem 1.1rem;
+    border: 1px solid #ccc;
+    background: #fff;
+    border-radius: 999px;
+    cursor: pointer;
+    font-family: inherit;
+  }
+  button:hover { background: #eef; }
+  button.custom { background: #f4f4f4; }
+  .status {
+    margin-top: 1rem;
+    padding: 0.75rem;
+    background: #e6f7e6;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    display: none;
+  }
+  .status.show { display: block; }
+  input[type="number"] {
+    width: 5rem;
+    padding: 0.4rem;
+    font-size: 0.9rem;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+  }
+</style>
+</head>
+<body>
+  <h1>Recovery log</h1>
+  <p class="subtitle">Tap a button to record. All entries feed into Model B's recover / detach terms for this tick.</p>
+
+  <div class="kind-group">
+    <div class="kind-title">Outside</div>
+    <div class="btns">
+      <button onclick="log('outside', 15)">+15 min</button>
+      <button onclick="log('outside', 30)">+30 min</button>
+      <button onclick="log('outside', 60)">+1 hr</button>
+      <button class="custom" onclick="logCustom('outside')">custom…</button>
+    </div>
+  </div>
+
+  <div class="kind-group">
+    <div class="kind-title">Walk (outside + active)</div>
+    <div class="btns">
+      <button onclick="log('walk', 15)">+15 min</button>
+      <button onclick="log('walk', 30)">+30 min</button>
+      <button onclick="log('walk', 45)">+45 min</button>
+      <button class="custom" onclick="logCustom('walk')">custom…</button>
+    </div>
+  </div>
+
+  <div class="kind-group">
+    <div class="kind-title">With people</div>
+    <div class="btns">
+      <button onclick="log('with_people', 30)">+30 min</button>
+      <button onclick="log('with_people', 60)">+1 hr</button>
+      <button onclick="log('with_people', 120)">+2 hr</button>
+      <button class="custom" onclick="logCustom('with_people')">custom…</button>
+    </div>
+  </div>
+
+  <div class="kind-group">
+    <div class="kind-title">Detach block (off screen, ≥60 min)</div>
+    <div class="btns">
+      <button onclick="log('detach', 60)">+1 hr</button>
+      <button onclick="log('detach', 120)">+2 hr</button>
+      <button onclick="log('detach', 240)">+4 hr</button>
+      <button class="custom" onclick="logCustom('detach')">custom…</button>
+    </div>
+  </div>
+
+  <div id="status" class="status"></div>
+
+<script>
+async function log(kind, minutes) {
+  const r = await fetch('/log', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ kind, minutes }),
+  });
+  const s = document.getElementById('status');
+  if (r.ok) {
+    s.textContent = `Logged: ${kind} +${minutes} min`;
+    s.classList.add('show');
+    setTimeout(() => s.classList.remove('show'), 2000);
+  } else {
+    s.textContent = 'Error logging.';
+    s.classList.add('show');
+  }
+}
+
+function logCustom(kind) {
+  const m = prompt(`Minutes of ${kind}?`);
+  const n = parseFloat(m);
+  if (n > 0) log(kind, n);
+}
+</script>
+</body>
+</html>
