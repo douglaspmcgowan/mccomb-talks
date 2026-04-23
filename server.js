@@ -3983,8 +3983,8 @@ RECHARGE_IDLE_PER_MIN = <span class="num">0.4</span>    <span class="cmt"># AFK/
 <ul class="findings">
   <li>Go to <a href="https://github.com/Elecrow-RD/CrowPanel-ESP32-5.79-E-paper-HMI-Display-with-272-792" target="_blank">github.com/Elecrow-RD/CrowPanel-ESP32-5.79-E-paper-HMI-Display-with-272-792</a></li>
   <li>Click <strong>Code &rarr; Download ZIP</strong></li>
-  <li>Unzip. Navigate into the <code>example/</code> folder &mdash; each example is its own self-contained Arduino sketch with <code>EPD.h</code> / <code>EPD.cpp</code> / <code>GUI_Paint.h</code> / <code>GUI_Paint.cpp</code> / font headers alongside the <code>.ino</code>.</li>
-  <li>Open one of the example <code>.ino</code> files (e.g. <code>Display_Picture</code>) in Arduino IDE. If it asks to move into a correctly named folder, click yes.</li>
+  <li>Unzip. Navigate into the <code>example/arduino/Demos/5.79_WIFI_refresh/</code> folder &mdash; this example is the reference sketch. It ships with the support files you need: <code>EPD.h</code>, <code>EPD.cpp</code>, <code>EPD_Init.h</code>, <code>EPD_Init.cpp</code>, <code>EPDfont.h</code>, <code>spi.h</code>, <code>spi.cpp</code>.</li>
+  <li>You will copy these 6 support files (not the <code>.ino</code>) into your own sketch folder in Phase 4.2.</li>
 </ul>
 
 <div class="callout"><div class="label">No global Library install</div><p>Unlike Adafruit_GFX or ArduinoJson, you do <em>not</em> install <code>EPD.h</code> via Library Manager. ELECROW's pattern is to keep the library source files in each sketch folder. That's ugly but works; it also means you can safely hack on the library per-sketch without breaking other projects.</p></div>
@@ -4090,272 +4090,191 @@ RECHARGE_IDLE_PER_MIN = <span class="num">0.4</span>    <span class="cmt"># AFK/
 
 <details class="section-fold"><summary>4.2 The main Arduino sketch</summary>
 <div class="section-body">
-<p>Create a new sketch folder called <code>psych_battery_crowpanel/</code> and copy the library source files (<code>EPD.h</code>, <code>EPD.cpp</code>, <code>GUI_Paint.h</code>, <code>GUI_Paint.cpp</code>, font headers) from one of the ELECROW example folders into it. Then save this as <code>psych_battery_crowpanel.ino</code>:</p>
+<p>This is a <strong>Serial-only</strong> build &mdash; no WiFi, no HTTP. The Python script <code>charge_sender.py</code> sends charge levels over the USB cable that's already plugged in. Create a new sketch folder called <code>psych_battery_crowpanel/</code>, copy the 6 support files from the ELECROW example folder, and save the firmware below as <code>psych_battery_crowpanel.ino</code>.</p>
 
 <details class="build-help"><summary>What goes in the sketch folder</summary><div class="help-body">
 <details class="code-fold"><summary>psych_battery_crowpanel/</summary>
 <pre class="code-block">psych_battery_crowpanel/
 ├── psych_battery_crowpanel.ino   &larr; your main sketch (below)
-├── EPD.h
+├── EPD.h                         &larr; drawing API
 ├── EPD.cpp
-├── GUI_Paint.h
-├── GUI_Paint.cpp
-├── Debug.h
-├── fonts.h                       &larr; or individual font*.c files, depending on release
-└── (optional) ImageData.h        &larr; only if you display bitmaps</pre>
+├── EPD_Init.h                    &larr; hardware init, pin defs, EPD_W=800/EPD_H=272
+├── EPD_Init.cpp
+├── EPDfont.h                     &larr; font bitmaps (8, 12, 16, 24, 48 px)
+├── spi.h                         &larr; SPI driver
+└── spi.cpp</pre>
 </details>
-<p>Use <strong>Sketch &rarr; Show Sketch Folder</strong> to open the folder, then copy files in from the ELECROW ZIP's <code>example/</code> subdirectory. Restart Arduino IDE afterward so the tabs refresh.</p>
+<p>Source path in the ELECROW ZIP: <code>example/arduino/Demos/5.79_WIFI_refresh/</code>. Copy those 7 files (the 6 support files + the .ino is replaced by ours). Do <strong>NOT</strong> copy <code>Ap_29demo.h</code> (bitmap demo, not needed) and do <strong>NOT</strong> look for <code>GUI_Paint.h</code> &mdash; that's a different library that doesn't exist here. Use <strong>Sketch &rarr; Show Sketch Folder</strong> to open the destination, then copy. Restart Arduino IDE so the tabs refresh.</p>
 </div></details>
 
-<details class="code-fold"><summary>psych_battery_crowpanel.ino &mdash; main firmware</summary>
+<details class="code-fold"><summary>psych_battery_crowpanel.ino &mdash; Serial-only firmware</summary>
 <pre class="code-block"><span class="cmt">/*
- * Psych_Battery CrowPanel Firmware (B/W variant)
- * Hardware: ELECROW CrowPanel ESP32-S3 5.79" E-Paper (dual SSD1683, 272x792 B/W)
- * Receives charge level (0-100) via WiFi HTTP or Serial
- * Displays a B/W battery bar; inverts display below 20% as the alert zone.
+ * Psych_Battery — CrowPanel ESP32-S3 5.79" E-Paper Firmware
+ * Hardware: ELECROW CrowPanel DIS08792E (dual SSD1683, 792x272 B/W)
+ *
+ * MODE: Serial (USB) only — no WiFi needed.
+ * Send a number 0-100 over Serial at 115200 baud to update the display.
+ * The Python script charge_sender.py does this automatically from the model.
+ *
+ * FILE STRUCTURE — put these files in the same sketch folder:
+ *   psych_battery_crowpanel.ino  ← this file
+ *   EPD.h / EPD.cpp              ← from example/arduino/Demos/5.79_WIFI_refresh/
+ *   EPD_Init.h / EPD_Init.cpp    ← same source folder
+ *   EPDfont.h                    ← same source folder (fonts file)
+ *   spi.h / spi.cpp              ← same source folder
+ *   (do NOT copy Ap_29demo.h — demo bitmap, not needed)
+ *   (do NOT look for GUI_Paint.h — that's a different library, doesn't exist here)
  */</span>
 
-<span class="kw">#include</span> <span class="str">&lt;WiFi.h&gt;</span>
-<span class="kw">#include</span> <span class="str">&lt;WebServer.h&gt;</span>
-<span class="kw">#include</span> <span class="str">&lt;ArduinoJson.h&gt;</span>
-<span class="kw">#include</span> <span class="str">"EPD.h"</span>
-<span class="kw">#include</span> <span class="str">"GUI_Paint.h"</span>
+<span class="kw">#include</span> <span class="str">"EPD.h"</span>        <span class="cmt">// Includes EPD_Init.h internally; all drawing functions here</span>
+<span class="kw">#include</span> <span class="str">"EPDfont.h"</span>    <span class="cmt">// Font bitmaps (8, 12, 16, 24, 48 px)</span>
 
-<span class="cmt">// ============ CONFIG - EDIT THESE ============</span>
-<span class="kw">const</span> <span class="ty">char</span>* WIFI_SSID     = <span class="str">"YourWiFiName"</span>;
-<span class="kw">const</span> <span class="ty">char</span>* WIFI_PASSWORD = <span class="str">"YourWiFiPassword"</span>;
-<span class="kw">const</span> <span class="ty">int</span>   HTTP_PORT     = <span class="num">80</span>;
-<span class="kw">const</span> <span class="ty">int</span>   ALERT_THRESHOLD = <span class="num">20</span>;  <span class="cmt">// below this, invert the display</span>
+<span class="cmt">// Framebuffer: 800 * 272 / 8 = 27200 bytes
+// EPD_W is 800 (not 792!) — dual-SSD1683 uses 800 for address alignment.</span>
+<span class="ty">uint8_t</span> ImageBW[<span class="num">27200</span>];
 
-<span class="cmt">// Display dimensions (CrowPanel 5.79" B/W landscape)</span>
-<span class="kw">#define</span> EPD_W <span class="num">792</span>
-<span class="kw">#define</span> EPD_H <span class="num">272</span>
+<span class="cmt">// Battery layout constants</span>
+<span class="kw">const</span> <span class="ty">int</span> BX  = <span class="num">40</span>;    <span class="cmt">// battery body left edge</span>
+<span class="kw">const</span> <span class="ty">int</span> BY  = <span class="num">50</span>;    <span class="cmt">// battery body top edge</span>
+<span class="kw">const</span> <span class="ty">int</span> BW  = <span class="num">680</span>;   <span class="cmt">// battery body width</span>
+<span class="kw">const</span> <span class="ty">int</span> BH  = <span class="num">172</span>;   <span class="cmt">// battery body height</span>
+<span class="kw">const</span> <span class="ty">int</span> PAD = <span class="num">8</span>;     <span class="cmt">// inner fill padding</span>
+<span class="kw">const</span> <span class="ty">int</span> NUB = <span class="num">22</span>;    <span class="cmt">// terminal nub width</span>
 
-<span class="cmt">// Framebuffer: 1 bit per pixel x 792 x 272 = 26,928 bytes (round to 27000)</span>
-<span class="ty">UBYTE</span> ImageBW[<span class="num">27000</span>];
+<span class="ty">int</span>  currentCharge = <span class="num">100</span>;
+<span class="ty">bool</span> needsRedraw   = <span class="kw">true</span>;
+<span class="ty">int</span>  refreshCount  = <span class="num">0</span>;
 
-<span class="ty">WebServer</span> server(HTTP_PORT);
-<span class="ty">int</span>  currentCharge   = <span class="num">100</span>;
-<span class="ty">int</span>  refreshCount    = <span class="num">0</span>;
-<span class="ty">bool</span> needsRedraw     = <span class="kw">true</span>;
-<span class="ty">bool</span> lastWasInverted = <span class="kw">false</span>;
+<span class="ty">void</span> <span class="fn">drawChargeBar</span>(<span class="ty">int</span> pct);
+<span class="ty">void</span> <span class="fn">fullRefresh</span>();
+<span class="ty">void</span> <span class="fn">fastRefresh</span>();
 
-<span class="cmt">// ============ SETUP ============</span>
 <span class="ty">void</span> <span class="fn">setup</span>() {
   Serial.begin(<span class="num">115200</span>);
-  delay(<span class="num">500</span>);
-  Serial.println(<span class="str">"\nPsych_Battery CrowPanel starting..."</span>);
+  delay(<span class="num">300</span>);
+  Serial.println(<span class="str">"Psych_Battery CrowPanel ready. Send 0-100 over Serial."</span>);
 
-  <span class="cmt">// Init display hardware (SPI + control pins)</span>
-  EPD_GPIOInit();
-  EPD_Init();                 <span class="cmt">// full refresh init</span>
-  EPD_Clear(<span class="num">0xFF</span>);             <span class="cmt">// white</span>
+  EPD_Init();
   Paint_NewImage(ImageBW, EPD_W, EPD_H, <span class="num">0</span>, WHITE);
   Paint_Clear(WHITE);
   drawChargeBar(currentCharge);
   EPD_Display(ImageBW);
+  EPD_Update();
   EPD_DeepSleep();
-
-  <span class="cmt">// Connect to WiFi</span>
-  WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
-  Serial.print(<span class="str">"Connecting to WiFi"</span>);
-  <span class="ty">int</span> retries = <span class="num">0</span>;
-  <span class="kw">while</span> (WiFi.status() != WL_CONNECTED && retries &lt; <span class="num">20</span>) {
-    delay(<span class="num">500</span>);
-    Serial.print(<span class="str">"."</span>);
-    retries++;
-  }
-  <span class="kw">if</span> (WiFi.status() == WL_CONNECTED) {
-    Serial.print(<span class="str">"\nConnected! IP: "</span>);
-    Serial.println(WiFi.localIP());
-  } <span class="kw">else</span> {
-    Serial.println(<span class="str">"\nWiFi failed. Running serial-only mode."</span>);
-  }
-
-  <span class="cmt">// HTTP endpoints</span>
-  server.on(<span class="str">"/charge"</span>, HTTP_POST, handleChargePost);
-  server.on(<span class="str">"/charge"</span>, HTTP_GET,  handleChargeGet);
-  server.on(<span class="str">"/"</span>, []() {
-    server.send(<span class="num">200</span>, <span class="str">"text/plain"</span>,
-      <span class="str">"Psych_Battery (CrowPanel B/W) ready. POST /charge with JSON {\"level\": 0-100}"</span>);
-  });
-  server.begin();
-  Serial.println(<span class="str">"HTTP server on port 80"</span>);
 }
 
-<span class="cmt">// ============ LOOP ============</span>
 <span class="ty">void</span> <span class="fn">loop</span>() {
-  server.handleClient();
-  handleSerialInput();
+  <span class="kw">if</span> (Serial.available() &gt; <span class="num">0</span>) {
+    String line = Serial.readStringUntil(<span class="str">'\n'</span>);
+    line.trim();
+    <span class="kw">if</span> (line.length() &gt; <span class="num">0</span>) {
+      <span class="ty">int</span> val = line.toInt();
+      <span class="kw">if</span> (val &gt;= <span class="num">0</span> &amp;&amp; val &lt;= <span class="num">100</span> &amp;&amp; val != currentCharge) {
+        currentCharge = val;
+        needsRedraw   = <span class="kw">true</span>;
+        Serial.print(<span class="str">"ACK "</span>);
+        Serial.println(currentCharge);
+      }
+    }
+  }
+
   <span class="kw">if</span> (needsRedraw) {
-    redrawDisplay();
+    Paint_Clear(WHITE);
+    drawChargeBar(currentCharge);
+    refreshCount++;
+    <span class="kw">if</span> (refreshCount % <span class="num">10</span> == <span class="num">0</span>) { fullRefresh(); } <span class="kw">else</span> { fastRefresh(); }
     needsRedraw = <span class="kw">false</span>;
   }
 }
 
-<span class="cmt">// ============ HTTP HANDLERS (identical to e-ink build) ============</span>
-<span class="ty">void</span> <span class="fn">handleChargePost</span>() {
-  <span class="kw">if</span> (!server.hasArg(<span class="str">"plain"</span>)) {
-    server.send(<span class="num">400</span>, <span class="str">"text/plain"</span>, <span class="str">"Missing JSON body"</span>); <span class="kw">return</span>;
-  }
-  <span class="ty">JsonDocument</span> doc;
-  <span class="ty">DeserializationError</span> err = deserializeJson(doc, server.arg(<span class="str">"plain"</span>));
-  <span class="kw">if</span> (err) { server.send(<span class="num">400</span>, <span class="str">"text/plain"</span>, <span class="str">"Invalid JSON"</span>); <span class="kw">return</span>; }
-  <span class="ty">int</span> level = doc[<span class="str">"level"</span>] | -<span class="num">1</span>;
-  <span class="kw">if</span> (level &lt; <span class="num">0</span> || level &gt; <span class="num">100</span>) {
-    server.send(<span class="num">400</span>, <span class="str">"text/plain"</span>, <span class="str">"level must be 0-100"</span>); <span class="kw">return</span>;
-  }
-  setCharge(level);
-  server.send(<span class="num">200</span>, <span class="str">"application/json"</span>,
-    <span class="str">"{\"ok\":true,\"level\":"</span> + String(level) + <span class="str">"}"</span>);
+<span class="ty">void</span> <span class="fn">fullRefresh</span>() {
+  EPD_Init(); EPD_Display(ImageBW); EPD_Update(); EPD_DeepSleep();
 }
 
-<span class="ty">void</span> <span class="fn">handleChargeGet</span>() {
-  <span class="kw">if</span> (!server.hasArg(<span class="str">"level"</span>)) {
-    server.send(<span class="num">200</span>, <span class="str">"application/json"</span>,
-      <span class="str">"{\"level\":"</span> + String(currentCharge) + <span class="str">"}"</span>); <span class="kw">return</span>;
-  }
-  <span class="ty">int</span> level = server.arg(<span class="str">"level"</span>).toInt();
-  <span class="kw">if</span> (level &lt; <span class="num">0</span> || level &gt; <span class="num">100</span>) {
-    server.send(<span class="num">400</span>, <span class="str">"text/plain"</span>, <span class="str">"level must be 0-100"</span>); <span class="kw">return</span>;
-  }
-  setCharge(level);
-  server.send(<span class="num">200</span>, <span class="str">"application/json"</span>,
-    <span class="str">"{\"ok\":true,\"level\":"</span> + String(level) + <span class="str">"}"</span>);
+<span class="ty">void</span> <span class="fn">fastRefresh</span>() {
+  EPD_FastMode1Init(); EPD_Display(ImageBW); EPD_FastUpdate(); EPD_DeepSleep();
 }
 
-<span class="ty">void</span> <span class="fn">handleSerialInput</span>() {
-  <span class="kw">if</span> (Serial.available()) {
-    <span class="ty">int</span> level = Serial.parseInt();
-    <span class="kw">if</span> (level &gt;= <span class="num">0</span> && level &lt;= <span class="num">100</span>) {
-      Serial.print(<span class="str">"Serial input: charge = "</span>);
-      Serial.println(level);
-      setCharge(level);
-    }
-    <span class="kw">while</span> (Serial.available()) Serial.read();
-  }
-}
+<span class="ty">void</span> <span class="fn">drawChargeBar</span>(<span class="ty">int</span> pct) {
+  pct = constrain(pct, <span class="num">0</span>, <span class="num">100</span>);
+  <span class="ty">bool</span> isAlert = (pct &lt; <span class="num">20</span>);
 
-<span class="ty">void</span> <span class="fn">setCharge</span>(<span class="ty">int</span> level) {
-  <span class="kw">if</span> (level != currentCharge) { currentCharge = level; needsRedraw = <span class="kw">true</span>; }
-}
-
-<span class="cmt">// ============ DISPLAY ============</span>
-<span class="ty">void</span> <span class="fn">redrawDisplay</span>() {
-  Serial.print(<span class="str">"Drawing charge = "</span>); Serial.println(currentCharge);
-
-  <span class="ty">bool</span> inverted = (currentCharge &lt; ALERT_THRESHOLD);
-  drawChargeBar(currentCharge);
-
-  refreshCount++;
-  <span class="cmt">// Force a full refresh on inversion flip OR every 10 partial updates
-  // (full refresh clears ghosting that partial refresh leaves behind)</span>
-  <span class="ty">bool</span> needFullRefresh =
-      (inverted != lastWasInverted) || (refreshCount % <span class="num">10</span> == <span class="num">0</span>);
-
-  <span class="kw">if</span> (needFullRefresh) {
-    EPD_Init();
-    EPD_Display(ImageBW);
+  <span class="kw">if</span> (isAlert) {
+    Paint_Clear(BLACK);
+    EPD_DrawRectangle(BX, BY, BX + BW, BY + BH, WHITE, <span class="num">0</span>);
+    EPD_DrawRectangle(BX + BW, BY + <span class="num">50</span>, BX + BW + NUB, BY + BH - <span class="num">50</span>, WHITE, <span class="num">1</span>);
+    <span class="ty">int</span> fillW = (BW - PAD * <span class="num">2</span>) * pct / <span class="num">100</span>;
+    <span class="kw">if</span> (fillW &gt; <span class="num">0</span>) EPD_DrawRectangle(BX + PAD, BY + PAD, BX + PAD + fillW, BY + BH - PAD, WHITE, <span class="num">1</span>);
+    <span class="ty">char</span> buf[<span class="num">4</span>]; snprintf(buf, <span class="kw">sizeof</span>(buf), <span class="str">"%d"</span>, pct);
+    <span class="ty">int</span> textX = BX + BW / <span class="num">2</span> - (strlen(buf) * <span class="num">24</span> + <span class="num">12</span>) / <span class="num">2</span>;
+    EPD_ShowNum(textX, BY + BH / <span class="num">2</span> - <span class="num">24</span>, pct, <span class="num">3</span>, <span class="num">48</span>, WHITE);
+    EPD_ShowString(textX + strlen(buf) * <span class="num">24</span>, BY + BH / <span class="num">2</span> - <span class="num">24</span>, <span class="str">"%"</span>, <span class="num">48</span>, WHITE);
+    EPD_ShowString(BX + BW / <span class="num">2</span> - <span class="num">72</span>, BY + BH + <span class="num">10</span>, <span class="str">"RECHARGE"</span>, <span class="num">16</span>, WHITE);
   } <span class="kw">else</span> {
-    EPD_Init_Fast();
-    EPD_Display_Fast(ImageBW);
+    EPD_DrawRectangle(BX, BY, BX + BW, BY + BH, BLACK, <span class="num">0</span>);
+    EPD_DrawRectangle(BX + BW, BY + <span class="num">50</span>, BX + BW + NUB, BY + BH - <span class="num">50</span>, BLACK, <span class="num">1</span>);
+    <span class="ty">int</span> fillW = (BW - PAD * <span class="num">2</span>) * pct / <span class="num">100</span>;
+    <span class="kw">if</span> (fillW &gt; <span class="num">0</span>) EPD_DrawRectangle(BX + PAD, BY + PAD, BX + PAD + fillW, BY + BH - PAD, BLACK, <span class="num">1</span>);
+    <span class="ty">int</span> centerX = BX + BW / <span class="num">2</span>;
+    <span class="ty">int</span> fillRight = BX + PAD + fillW;
+    <span class="ty">uint16_t</span> textColor = (fillRight &gt; centerX - <span class="num">20</span>) ? WHITE : BLACK;
+    <span class="ty">char</span> buf[<span class="num">4</span>]; snprintf(buf, <span class="kw">sizeof</span>(buf), <span class="str">"%d"</span>, pct);
+    <span class="ty">int</span> numW = strlen(buf) * <span class="num">24</span>;
+    <span class="ty">int</span> textX = centerX - (numW + <span class="num">12</span>) / <span class="num">2</span>;
+    EPD_ShowNum(textX, BY + BH / <span class="num">2</span> - <span class="num">24</span>, pct, <span class="num">3</span>, <span class="num">48</span>, textColor);
+    EPD_ShowString(textX + numW, BY + BH / <span class="num">2</span> - <span class="num">24</span>, <span class="str">"%"</span>, <span class="num">48</span>, textColor);
   }
-  EPD_DeepSleep();
-  lastWasInverted = inverted;
-}
-
-<span class="ty">void</span> <span class="fn">drawChargeBar</span>(<span class="ty">int</span> percentage) {
-  <span class="ty">bool</span> alert = (percentage &lt; ALERT_THRESHOLD);
-  <span class="ty">UBYTE</span> bg = alert ? BLACK : WHITE;
-  <span class="ty">UBYTE</span> fg = alert ? WHITE : BLACK;
-
-  <span class="cmt">// Reset framebuffer with chosen background</span>
-  Paint_NewImage(ImageBW, EPD_W, EPD_H, <span class="num">0</span>, bg);
-  Paint_Clear(bg);
-
-  <span class="cmt">// Battery body outline</span>
-  <span class="ty">int</span> bx = <span class="num">40</span>,  by = <span class="num">50</span>;
-  <span class="ty">int</span> bw = <span class="num">680</span>, bh = <span class="num">172</span>;
-  Paint_DrawRectangle(bx, by, bx + bw, by + bh,
-                      fg, DOT_PIXEL_3X3, DRAW_FILL_EMPTY);
-
-  <span class="cmt">// Positive terminal (button top) on the right</span>
-  Paint_DrawRectangle(bx + bw, by + <span class="num">50</span>, bx + bw + <span class="num">25</span>, by + bh - <span class="num">50</span>,
-                      fg, DOT_PIXEL_3X3, DRAW_FILL_FULL);
-
-  <span class="cmt">// Proportional fill inside the body</span>
-  <span class="ty">int</span> innerX = bx + <span class="num">8</span>,  innerY = by + <span class="num">8</span>;
-  <span class="ty">int</span> innerW = bw - <span class="num">16</span>, innerH = bh - <span class="num">16</span>;
-  <span class="ty">int</span> fillW  = (innerW * percentage) / <span class="num">100</span>;
-  <span class="kw">if</span> (fillW &gt; <span class="num">0</span>) {
-    Paint_DrawRectangle(innerX, innerY, innerX + fillW, innerY + innerH,
-                        fg, DOT_PIXEL_1X1, DRAW_FILL_FULL);
-  }
-
-  <span class="cmt">// Diagonal hatch pattern in the empty (unfilled) region at 0%</span>
-  <span class="kw">if</span> (percentage == <span class="num">0</span>) {
-    <span class="kw">for</span> (<span class="ty">int</span> x = innerX; x &lt; innerX + innerW; x += <span class="num">16</span>) {
-      Paint_DrawLine(x, innerY, x + innerH, innerY + innerH,
-                     fg, DOT_PIXEL_1X1, LINE_STYLE_SOLID);
-    }
-  }
-
-  <span class="cmt">// Percentage text, centered. Bigger font in alert mode.</span>
-  <span class="ty">char</span> txt[<span class="num">8</span>];
-  snprintf(txt, <span class="kw">sizeof</span>(txt), <span class="str">"%d%%"</span>, percentage);
-  <span class="kw">if</span> (alert) {
-    <span class="cmt">// In alert mode: text sits on the fill (white on black)</span>
-    Paint_DrawString_EN(bx + bw/<span class="num">2</span> - <span class="num">72</span>, by + bh/<span class="num">2</span> - <span class="num">28</span>,
-                        txt, &amp;Font48, BLACK, WHITE);
-    Paint_DrawString_EN(bx + bw/<span class="num">2</span> - <span class="num">68</span>, by + bh + <span class="num">14</span>,
-                        <span class="str">"RECHARGE"</span>, &amp;Font24, BLACK, WHITE);
-  } <span class="kw">else</span> {
-    <span class="cmt">// Normal mode: text is black on the white background, reversed to white over the fill</span>
-    Paint_DrawString_EN(bx + bw/<span class="num">2</span> - <span class="num">60</span>, by + bh/<span class="num">2</span> - <span class="num">28</span>,
-                        txt, &amp;Font48, bg, fg);
-  }
-
-  <span class="cmt">// Top label</span>
-  Paint_DrawString_EN(<span class="num">250</span>, <span class="num">10</span>, <span class="str">"PSYCH_BATTERY"</span>,
-                      &amp;Font24, bg, fg);
 }</pre>
 </details>
 </div>
 </details>
 
-<details class="section-fold"><summary>4.3 Edit WiFi credentials &amp; upload</summary>
+<details class="section-fold"><summary>4.3 Upload the firmware</summary>
 <div class="section-body">
-<p>Near the top of the sketch, replace <code>"YourWiFiName"</code> and <code>"YourWiFiPassword"</code> with your actual 2.4&nbsp;GHz network. ESP32-S3 supports 2.4&nbsp;GHz only &mdash; same restriction as the original ESP32. Upload (same Upload button). Open Serial Monitor at 115200. You should see:</p>
-<details class="code-fold"><summary>Expected serial output</summary>
-<pre class="code-block">Psych_Battery CrowPanel starting...
-Connecting to WiFi.....
-Connected! IP: 192.168.1.132
-HTTP server on port 80</pre>
+<p>No config to edit &mdash; the firmware is Serial-only, no WiFi credentials. Just upload (click the right-arrow button). Open Serial Monitor at 115200&nbsp;baud. You should see the boot message, then the display flashes and shows 100% on a white background:</p>
+<details class="code-fold"><summary>Expected serial output on boot</summary>
+<pre class="code-block">Psych_Battery CrowPanel ready. Send 0-100 over Serial.</pre>
 </details>
-<p>Write down the IP &mdash; same contract as the other build, same <code>charge_sender.py</code>.</p>
+<p>If the display doesn't update, check "USB CDC On Boot" is <strong>Enabled</strong> in Tools (required for Serial to work over the native USB port).</p>
 </div>
 </details>
 
-<details class="section-fold"><summary>4.4 Test via serial &amp; browser</summary>
+<details class="section-fold"><summary>4.4 Test via Serial Monitor</summary>
 <div class="section-body">
 <ul class="findings">
-  <li><strong>Serial:</strong> in Serial Monitor, type a number 0&ndash;100 and press Enter. Partial refresh &lt;1 s.</li>
-  <li><strong>Browser:</strong> go to <code>http://&lt;BATTERY_IP&gt;/charge?level=15</code>. Display should invert (black bg, white "15%" + "RECHARGE") since you crossed under 20%.</li>
-  <li><strong>Alert flip &rarr; normal flip:</strong> try <code>level=25</code>. Display reverts to white background. The inversion transitions always trigger a full refresh (~8 s) to avoid ghost artifacts.</li>
+  <li>Open Serial Monitor (Tools &rarr; Serial Monitor, or Ctrl+Shift+M) at <strong>115200 baud</strong>. Set the line ending to <strong>Newline</strong> (dropdown at bottom-right of Serial Monitor).</li>
+  <li>Type <code>75</code> and press Enter. The display should fast-refresh (&lt;1 s) and show 75% fill.</li>
+  <li>Type <code>15</code> and press Enter. Display should invert: black background, white "15%", "RECHARGE" label below. This transition triggers a full refresh (~8 s) to clear ghost artifacts.</li>
+  <li>Type <code>25</code> and press Enter. Display should revert to white background &mdash; another full refresh on the alert-to-normal transition.</li>
+  <li>For subsequent updates at the same polarity (e.g. 60 → 55 → 50), you'll see fast partial refresh (&lt;1 s). Full refresh happens automatically every 10 updates.</li>
 </ul>
+<div class="callout"><div class="label">Quick test from Python</div><p>With Serial Monitor closed (only one program can hold the serial port), run: <code>python charge_sender.py --port COM3 --test 42</code>. You should see <code>ACK: ACK 42</code> and the display updates to 42%. Adjust COM3 to match your port (run <code>--list</code> to find it).</p></div>
 </div>
 </details>
 
 <!-- ============ PHASE 5: PYTHON BACKEND ============ -->
-<div class="phase-header"><span class="phase-num">5</span><span class="phase-title">Python Backend Integration</span><span class="phase-time">0 extra min (reuses e-ink build)</span></div>
+<div class="phase-header"><span class="phase-num">5</span><span class="phase-title">Python Backend Integration</span><span class="phase-time">5 min</span></div>
 
-<details class="section-fold" id="cp-python"><summary>5.1 Reuse charge_sender.py &mdash; the HTTP contract is identical</summary>
+<details class="section-fold" id="cp-python"><summary>5.1 Run charge_sender.py &mdash; polls the model server and drives the display</summary>
 <div class="section-body">
-<p>The firmware above exposes the same HTTP interface as the E-Ink Build firmware: <code>POST /charge</code> with JSON <code>{"level": 0-100}</code>, <code>GET /charge?level=N</code>, and <code>GET /</code> returns plain-text status. That means <strong>the entire Phase 5 of the <a href="#sec-seinkguide">E-Ink Build</a> applies verbatim</strong> &mdash; <code>charge_sender.py</code>, <code>energy_score_to_battery.py</code>, the ActivityWatch loop, and the virtualenv setup all work unchanged.</p>
+<p><code>charge_sender.py</code> is in <code>integrations/crowpanel/</code>. It polls <code>localhost:7070/state</code> every 30 seconds, reads <code>E_display</code> (0–1), converts to 0–100, and sends it to the CrowPanel over the same USB cable. No WiFi, no IP addresses.</p>
 
-<p>The only edit: set <code>BATTERY_IP</code> at the top of <code>charge_sender.py</code> to the CrowPanel's IP address (from the Serial Monitor output in 4.3). Everything else is byte-for-byte the same.</p>
+<ol class="findings">
+  <li>Install dependencies: <code>pip install pyserial requests</code></li>
+  <li>Find your port: <code>python charge_sender.py --list</code> &mdash; look for CP2102, CH340, ESP32, or USB Serial in the description.</li>
+  <li>Start the model server (if not already running): <code>python -m integrations.models.main</code></li>
+  <li>Start the sender: <code>python charge_sender.py --port COM3</code> (adjust port for your system)</li>
+</ol>
 
-<div class="callout"><div class="label">If you're running both builds side-by-side</div><p>Nothing stops you from flashing both a Good Display kit and a CrowPanel on the same network and mirroring charge to both. Just set two IPs in <code>charge_sender.py</code> and <code>POST</code> to each in parallel. Useful for A/B testing visual legibility at a distance, or for demoing the two display styles during the McComb seminar.</p></div>
+<details class="code-fold"><summary>Expected output</summary>
+<pre class="code-block">Connecting to CrowPanel on COM3 at 115200 baud…
+Connected. Polling model server every 30 seconds.
+[14:32:01] Sent 73% → ACK 73
+[14:32:31] 73% (no change, skipped)
+[14:33:01] Sent 71% → ACK 71</pre>
+</details>
+
+<div class="callout"><div class="label">Quick smoke test without the model server</div><p>Run <code>python charge_sender.py --port COM3 --test 55</code>. This sends a single value (55%) without needing the model server running, and prints the ACK. Use it to confirm the Serial pipeline works before launching the full stack.</p></div>
 </div>
 </details>
 
@@ -4408,12 +4327,12 @@ HTTP server on port 80</pre>
 <tr><td>Upload fails: "Failed to connect"</td><td>Board didn't auto-enter flash mode</td><td>Hold BOOT, tap RESET, release BOOT, then click Upload.</td></tr>
 <tr><td>Upload succeeds but Serial Monitor is blank</td><td>"USB CDC On Boot" disabled</td><td>Tools &rarr; USB CDC On Boot &rarr; Enabled. Re-upload.</td></tr>
 <tr><td>Display stays blank after upload</td><td>Wrong partition scheme or PSRAM off</td><td>Verify Partition = "Huge APP (3MB No OTA/1MB SPIFFS)" and PSRAM = "OPI PSRAM". Re-upload.</td></tr>
-<tr><td>Only half the panel draws</td><td>Using GxEPD2 or single-driver library</td><td>Switch to ELECROW's EPD.h (dual-SSD1683). Copy the library files from <code>example/</code> into your sketch folder.</td></tr>
+<tr><td>Only half the panel draws</td><td>Using GxEPD2 or single-driver library</td><td>Switch to ELECROW's EPD.h (dual-SSD1683). Copy the 6 support files from <code>example/arduino/Demos/5.79_WIFI_refresh/</code> into your sketch folder.</td></tr>
 <tr><td>Panel flickers / ghosts heavily after many updates</td><td>Partial refresh has accumulated ghost charge</td><td>Normal. Firmware does a full refresh every 10 updates. Lower the counter to 5 if it bothers you.</td></tr>
-<tr><td>"Out of memory" at boot</td><td>Framebuffer allocation failed</td><td>Confirm PSRAM is set to OPI PSRAM in Tools. The framebuffer (~27 KB) is well under the 8 MB PSRAM budget, so this almost always means PSRAM is disabled.</td></tr>
-<tr><td>Inversion transition flashes multiple times</td><td>Full refresh sequence on the alert-flip</td><td>Expected &mdash; we force a full refresh on inversion so ghosting doesn't leak between contrast states. Partial refresh between same-state updates.</td></tr>
-<tr><td>"Connecting to WiFi...." never ends</td><td>Wrong SSID / password, or 5 GHz only</td><td>ESP32-S3 is 2.4 GHz only. Use a phone hotspot if your home network is 5 GHz.</td></tr>
-<tr><td>HTTP requests time out</td><td>CrowPanel lost WiFi or IP changed</td><td>Check Serial Monitor for a new IP. Set a static DHCP lease on your router for a stable IP.</td></tr>
+<tr><td>"Out of memory" / crash at boot</td><td>Framebuffer allocation failed (PSRAM off)</td><td>Confirm PSRAM is set to OPI PSRAM in Tools. The 27,200-byte buffer needs PSRAM to be available.</td></tr>
+<tr><td>Inversion transition takes ~8 s</td><td>Full refresh triggered on alert-flip</td><td>Expected &mdash; we force a full refresh when crossing the 20% alert boundary. Fast refresh between same-polarity updates.</td></tr>
+<tr><td>charge_sender.py can't find port</td><td>Auto-detect failed</td><td>Run <code>python charge_sender.py --list</code> and pass the port explicitly with <code>--port COM3</code> (or the Mac/Linux equivalent).</td></tr>
+<tr><td>charge_sender.py "Cannot open port"</td><td>Serial Monitor is holding the port</td><td>Close Arduino IDE's Serial Monitor. Only one program can hold the serial port at a time.</td></tr>
 <tr><td>COM port doesn't appear</td><td>USB cable is charge-only, not data</td><td>Swap to a known-good USB-C data cable. ESP32-S3 uses native USB, so no driver needs installing.</td></tr>
 <tr><td>Board resets every few seconds</td><td>Watchdog timeout from a blocking function</td><td>Check that <code>loop()</code> calls <code>server.handleClient()</code> frequently. Don't put <code>delay()</code> over 1 s in the main loop.</td></tr>
 </table>
